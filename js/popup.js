@@ -70,6 +70,38 @@ function startRun() {
     refreshCode();
     // regenerate otp-code per second
     setInterval(refreshCode, 1000);
+
+    // show or hide code's pop-layer
+    const tooltip = document.getElementById('tooltip');
+    tooltip.addEventListener('mouseenter', () => {
+        tooltip.style.display = 'block';
+    });
+    tooltip.addEventListener('mouseleave', () => {
+        tooltip.style.display = 'none';
+    });
+    // wait for node rendered
+    setTimeout(addHoverLayer, 500);
+}
+
+// add pop-layer for each code
+function addHoverLayer() {
+    const tooltip = document.getElementById('tooltip');
+    const codeElementArr = document.querySelectorAll('.code');
+    //alert(codeElementArr.length)
+    codeElementArr.forEach(codeElement => {
+        const codeNode = codeElement;
+        codeElement.addEventListener('mouseenter', (event, obj) => {
+            //alert(codeNode.clientHeight);
+            tooltip.style.display = 'block';
+            tooltip.style.left = (event.pageX + 15) + 'px';
+            tooltip.style.top = (event.pageY + 1) + 'px';
+            tooltip.innerHTML = 'click to copy otp-code:<span style="color:blue;font-weight:bold;">' + codeNode.innerText + '</span>';
+        });
+
+        codeElement.addEventListener('mouseleave', () => {
+            tooltip.style.display = 'none';
+        });
+    });
 }
 
 // read last language, and switch to this lang on app start.

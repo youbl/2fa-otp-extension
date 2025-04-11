@@ -76,6 +76,16 @@
         ul li:hover {
             background-color: #9e9e82;
         }
+
+        .tooltip {
+            display: none;
+            position: absolute;
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 5px;
+            z-index: 1000;
+            width: 200px;
+        }
     </style>
 </head>
 
@@ -139,6 +149,9 @@
             </div>
         </li>
     </template>
+    <div id="tooltip" class="tooltip" style="display: none; position: absolute; background: #fff; border: 1px solid #ccc; padding: 5px; z-index: 1000;">
+        <div id="tooltipContent"></div>
+    </div>
     <script src="js/base32.min.js"></script>
     <script src="js/otpauth.umd.min.js"></script>
     <script src="js/jsQR.js"></script>

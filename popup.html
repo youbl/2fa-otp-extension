@@ -86,6 +86,41 @@
             z-index: 1000;
             width: 200px;
         }
+
+        .qrcode-hover {
+            position: relative;
+            display: inline-block;
+        }
+
+        .qrcode-popup {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 25px;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 15px;
+            z-index: 1001;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            min-width: 210px;
+        }
+
+        .qrcode-btn {
+            background-color: #f0f8ff;
+            color: #0066cc;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            padding: 3px 6px;
+            margin-left: 5px;
+        }
+
+        .qrcode-btn:hover {
+            background-color: #e6f3ff;
+            border-color: #0066cc;
+        }
     </style>
 </head>
 
@@ -139,13 +174,16 @@
     <!-- template for: otp-code table row -->
     <template id="codeItemTemp">
         <li style="height:30px;">
-            <div>
-                <div style="float: left; padding-left: 5px;"><a href="#0" class="del-btn multi-lang" data="{{desc}}">DEL</a></div>
-                <div style="float: left;padding-left: 5px;display:none"><a href="#0" class="copy-btn" data="{{secret}}">Key</a></div> 
-                <div style="float: left;width:27px;padding-left:10px;padding-right:5px;" class="endTime">{{endTime}}s</div>
-                <div style="float: left;width:50px;font-weight: bold;" class="code"><a href="#0" class="copy-btn" data="{{code}}">{{code}}</a></div>
-                <div style="float: left;font-weight: bold;padding-left:5px;" class="desc">{{desc}}</div>
-                <div style="clear: both;"></div>
+            <div style="display: flex; align-items: center; width: 100%;">
+                <div style="flex: 0 0 auto; padding-left: 5px;"><a href="#0" class="del-btn multi-lang" data="{{desc}}">DEL</a></div>
+                <div style="flex: 0 0 auto; padding-left: 5px; display:none;"><a href="#0" class="copy-btn" data="{{secret}}">Key</a></div> 
+                <div style="flex: 0 0 27px; padding-left:10px; padding-right:5px;" class="endTime">{{endTime}}s</div>
+                <div style="flex: 0 0 50px; font-weight: bold;" class="code"><a href="#0" class="copy-btn" data="{{code}}">{{code}}</a></div>
+                <div style="flex: 1; font-weight: bold; padding-left:5px;" class="desc">{{desc}}</div>
+                <div style="flex: 0 0 auto; padding-right: 5px;" class="qrcode-hover">
+                    <button class="qrcode-btn multi-lang" data-desc="{{desc}}" data-secret="{{secret}}">QRCode</button>
+                    <div class="qrcode-popup" id="qrcode-popup-{{desc}}"></div>
+                </div>
             </div>
         </li>
     </template>
@@ -155,6 +193,7 @@
     <script src="js/base32.min.js"></script>
     <script src="js/otpauth.umd.min.js"></script>
     <script src="js/jsQR.js"></script>
+    <script src="js/qrcode.min.js"></script>
     <script src="js/popup.js"></script>
 </body>
 

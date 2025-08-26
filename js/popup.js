@@ -364,7 +364,8 @@ function addNode(desc, secret) {
         for(let i=0,j=liList.length;i<j;i++){
         let container = liList[i]; 
         addCopyClick(container);
-        addDelClick(container);}
+        addDelClick(container);
+        addQRCodeClick(container);}
         __codeRefreshing = false;
     }, 50);
 }
@@ -807,4 +808,115 @@ function varintLength(value) {
 
 function base32Encode(data) {
     return base32.encode(data);
+}
+
+/**
+ * 生成otpauth://格式的URI
+ * @param {string} desc - 密钥描述/标题
+ * @param {string} secret - OTP密钥
+ * @returns {string} otpauth URI
+ */
+function generateOtpAuthUrl(desc, secret) {
+    const issuer = 'beinetOtpExt';
+    const account = desc;
+    
+    // 构建otpauth URI
+    const params = new URLSearchParams({
+        secret: secret,
+        issuer: issuer,
+        algorithm: 'SHA1',
+        digits: '6',
+        period: '30'
+    });
+    
+    return `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(account)}?${params.toString()}`;
+}
+
+/**
+ * 生成并显示二维码
+ * @param {string} desc - 密钥描述
+ * @param {string} secret - OTP密钥
+ * @param {Element} container - 二维码容器元素
+ */
+function generateQRCode(desc, secret, container) {
+    // 清空容器
+    container.innerHTML = '';
+    
+    // 生成otpauth URL
+    const otpauthUrl = generateOtpAuthUrl(desc, secret);
+    
+    // 创建二维码
+    try {
+        const qr = new QRCode(container, {
+            text: otpauthUrl,
+            width: 180,
+            height: 180,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M
+        });
+        
+        // 添加提示文字
+        const tipDiv = document.createElement('div');
+        tipDiv.style.textAlign = 'center';
+        tipDiv.style.fontSize = '12px';
+        tipDiv.style.color = '#666';
+        tipDiv.style.marginTop = '5px';
+        tipDiv.textContent = 'Use Google Authenticator to scan';
+        container.appendChild(tipDiv);
+        
+    } catch (error) {
+        console.error('生成二维码失败:', error);
+        container.innerHTML = '<div style="color: red; font-size: 12px;">生成二维码失败</div>';
+    }
+}
+
+/**
+ * 添加二维码按钮的事件监听
+ * @param {Element} container - 包含二维码按钮的容器
+ */
+function addQRCodeClick(container) {
+    const qrcodeBtns = container.getElementsByClassName('qrcode-btn');
+    for (let i = 0, j = qrcodeBtns.length; i < j; i++) {
+        const btn = qrcodeBtns[i];
+        if (btn.getAttribute('qrcode-bindclick') === null) {
+            const desc = btn.getAttribute('data-desc');
+            const secret = btn.getAttribute('data-secret');
+            const popupId = 'qrcode-popup-' + desc;
+            const popup = document.getElementById(popupId);
+            
+            // 鼠标悬停显示二维码
+            btn.addEventListener('mouseenter', function() {
+                if (popup && desc && secret) {
+                    generateQRCode(desc, secret, popup);
+                    popup.style.display = 'block';
+                }
+            });
+            
+            // 鼠标离开隐藏二维码
+            btn.addEventListener('mouseleave', function() {
+                if (popup) {
+                    // 延迟隐藏，允许鼠标移到二维码上
+                    setTimeout(() => {
+                        if (!popup.matches(':hover') && !btn.matches(':hover')) {
+                            popup.style.display = 'none';
+                        }
+                    }, 100);
+                }
+            });
+            
+            // 二维码容器本身的鼠标事件
+            if (popup) {
+                popup.addEventListener('mouseenter', function() {
+                    this.style.display = 'block';
+                });
+                
+                popup.addEventListener('mouseleave', function() {
+                    this.style.display = 'none';
+                });
+            }
+            
+            btn.setAttribute('qrcode-bindclick', '1'); // 避免重复绑定
+        }
+    }
 }

@@ -78,6 +78,29 @@ function startRun() {
     });
     tooltip.addEventListener('mouseleave', () => {
         tooltip.style.display = 'none';
+        // 清理可能存在的定时器
+        const tooltipUpdateTimers = document.querySelectorAll('.code');
+        tooltipUpdateTimers.forEach(element => {
+            const timer = element._tooltipUpdateTimer;
+            if (timer) {
+                clearInterval(timer);
+                element._tooltipUpdateTimer = null;
+            }
+        });
+    });
+    
+    // 为tooltip添加点击事件监听器（事件委托）
+    tooltip.addEventListener('click', function(event) {
+        const target = event.target;
+        console.log('Tooltip clicked, target:', target, 'classes:', target.classList);
+        if (target.classList.contains('tooltip-code')) {
+            const code = target.getAttribute('data-code');
+            console.log('Found tooltip-code with data-code:', code);
+            if (code) {
+                copyCodeFromTooltip(code);
+                event.stopPropagation(); // 防止事件冒泡
+            }
+        }
     });
     // wait for node rendered
     setTimeout(addHoverLayer, 500);
@@ -90,17 +113,140 @@ function addHoverLayer() {
     //alert(codeElementArr.length)
     codeElementArr.forEach(codeElement => {
         const codeNode = codeElement;
+        
+        // 避免重复绑定事件
+        if (codeElement.getAttribute('hover-bindclick') !== null) {
+            return;
+        }
+        // 用于存储固定的左侧位置
+        let fixedLeftPosition = 0;
+        
         codeElement.addEventListener('mouseenter', (event, obj) => {
             //alert(codeNode.clientHeight);
             tooltip.style.display = 'block';
-            tooltip.style.left = (event.pageX + 15) + 'px';
-            tooltip.style.top = (event.pageY + 1) + 'px';
-            tooltip.innerHTML = 'click to copy otp-code:<span style="color:blue;font-weight:bold;">' + codeNode.innerText + '</span>';
+            
+            // 计算OTP代码列的右边界位置（固定左右位置）
+            const codeRect = codeElement.getBoundingClientRect();
+            fixedLeftPosition = codeRect.right - 15; // 代码列右侧左移15px，轻微覆盖便于鼠标移入
+            
+            // 获取密钥以生成下一个代码
+            const parentLi = codeElement.closest('li');
+            const secretElement = parentLi ? parentLi.querySelector('.copy-btn[data]') : null;
+            const secret = secretElement ? secretElement.getAttribute('data') : '';
+            
+            // 生成双代码tooltip内容
+            const currentCode = codeNode.innerText;
+            const nextCode = secret ? getNextCode(secret) : '';
+            const currentTimeLeft = getCodeTimeLeft();
+            const nextTimeLeft = getNextCodeTimeLeft();
+            
+            const tooltipHtml = `
+                <div style="margin-bottom: 8px; font-weight: bold; color: #666;">📋 点击下方代码即可复制:</div>
+                <div class="tooltip-code-item tooltip-current">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>当前代码:</span>
+                        <span style="color: #0066cc; font-size: 11px;">${currentTimeLeft}秒后过期</span>
+                    </div>
+                    <div class="tooltip-code tooltip-code-current" style="color: #0066cc; cursor: pointer;" data-code="${currentCode}" title="点击复制">${currentCode}</div>
+                </div>
+                <div class="tooltip-code-item tooltip-next">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>下个代码:</span>
+                            <span style="color: #22aa22; font-size: 11px;">还有${nextTimeLeft}秒生效</span>
+                        </div>
+                        <div class="tooltip-code tooltip-code-next" style="color: #22aa22; cursor: pointer;" data-code="${nextCode}" title="点击复制">${nextCode}</div>
+                    </div>
+            `;
+            
+            tooltip.innerHTML = tooltipHtml;
+            
+            // 启动实时更新定时器
+            if (codeElement._tooltipUpdateTimer) {
+                clearInterval(codeElement._tooltipUpdateTimer);
+            }
+            codeElement._tooltipUpdateTimer = setInterval(updateTooltipContent, 1000);
+            
+            // 初始定位
+            updateTooltipPosition(event.pageY);
+        });
+
+        codeElement.addEventListener('mousemove', (event) => {
+            if (tooltip.style.display === 'block') {
+                // 只更新垂直位置，水平位置保持固定
+                updateTooltipPosition(event.pageY);
+            }
         });
 
         codeElement.addEventListener('mouseleave', () => {
-            tooltip.style.display = 'none';
+            // 延迟隐藏，允许鼠标移到tooltip上
+            setTimeout(() => {
+                if (!tooltip.matches(':hover') && !codeElement.matches(':hover')) {
+                    tooltip.style.display = 'none';
+                    // 清理定时器
+                    if (codeElement._tooltipUpdateTimer) {
+                        clearInterval(codeElement._tooltipUpdateTimer);
+                        codeElement._tooltipUpdateTimer = null;
+                    }
+                }
+            }, 150); // 150ms延迟，给用户时间移动鼠标
         });
+        
+        // 实时更新tooltip内容的函数
+        function updateTooltipContent() {
+            if (tooltip.style.display === 'block') {
+                const parentLi = codeElement.closest('li');
+                const secretElement = parentLi ? parentLi.querySelector('.copy-btn[data]') : null;
+                const secret = secretElement ? secretElement.getAttribute('data') : '';
+                
+                const currentCode = codeNode.innerText;
+                const nextCode = secret ? getNextCode(secret) : '';
+                const currentTimeLeft = getCodeTimeLeft();
+                const nextTimeLeft = getNextCodeTimeLeft();
+                
+                const tooltipHtml = `
+                    <div style="margin-bottom: 8px; font-weight: bold; color: #666;">📋 点击下方代码即可复制:</div>
+                    <div class="tooltip-code-item tooltip-current">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>当前代码:</span>
+                            <span style="color: #0066cc; font-size: 11px;">${currentTimeLeft}秒后过期</span>
+                        </div>
+                        <div class="tooltip-code tooltip-code-current" style="color: #0066cc; cursor: pointer;" data-code="${currentCode}" title="点击复制">${currentCode}</div>
+                    </div>
+                    <div class="tooltip-code-item tooltip-next">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>下个代码:</span>
+                            <span style="color: #22aa22; font-size: 11px;">还有${nextTimeLeft}秒生效</span>
+                        </div>
+                        <div class="tooltip-code tooltip-code-next" style="color: #22aa22; cursor: pointer;" data-code="${nextCode}" title="点击复制">${nextCode}</div>
+                    </div>
+                `;
+                
+                tooltip.innerHTML = tooltipHtml;
+            }
+        }
+        
+        // 更新tooltip位置的辅助函数
+        function updateTooltipPosition(mouseY) {
+            const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+            const tooltipHeight = 120; // 更新tooltip高度估算（双代码显示需要更多空间）
+            let topPosition = mouseY + 1;
+            
+            // 防止tooltip超出窗口底部
+            if (topPosition + tooltipHeight > windowHeight) {
+                topPosition = windowHeight - tooltipHeight - 10;
+            }
+            
+            // 防止tooltip超出窗口顶部
+            if (topPosition < 10) {
+                topPosition = 10;
+            }
+            
+            tooltip.style.left = fixedLeftPosition + 'px';
+            tooltip.style.top = topPosition + 'px';
+        }
+        
+        // 标记已绑定，避免重复绑定
+        codeElement.setAttribute('hover-bindclick', '1');
     });
 }
 
@@ -366,6 +512,10 @@ function addNode(desc, secret) {
         addCopyClick(container);
         addDelClick(container);
         addQRCodeClick(container);}
+        
+        // 重新绑定悬停效果，确保新添加的代码也有tooltip
+        addHoverLayer();
+        
         __codeRefreshing = false;
     }, 50);
 }
@@ -425,6 +575,53 @@ function getCode(secret) {
 }
 
 /**
+ * generate next otp-code (for next 30-second period)
+ * 
+ * @param {string} secret otp-key
+ * @returns next code
+ */
+function getNextCode(secret) {
+    if (!secret) {
+        return '';
+    }
+    
+    // 简单的方法：临时修改Date.now()来模拟未来时间
+    const originalNow = Date.now;
+    const originalDateNow = Date.now;
+    
+    try {
+        // 计算下一个30秒周期的开始时间
+        const currentTime = Math.floor(Date.now() / 1000);
+        const currentPeriod = Math.floor(currentTime / 30);
+        const nextPeriodStart = (currentPeriod + 1) * 30;
+        const nextPeriodMs = nextPeriodStart * 1000;
+        
+        // 临时重写Date.now()
+        Date.now = function() { return nextPeriodMs; };
+        
+        let totp = new OTPAuth.TOTP({
+            issuer: 'youbl',
+            algorithm: "SHA1",
+            digits: 6,
+            period: 30,
+            secret: secret,
+        });
+        
+        // 生成下一个周期的代码
+        const nextCode = totp.generate();
+        
+        return nextCode;
+        
+    } catch(e) {
+        console.error('生成下一个OTP代码失败:', e);
+        return '';
+    } finally {
+        // 恢复原始的Date.now()
+        Date.now = originalNow;
+    }
+}
+
+/**
  * generate left-time for current otp-code
  * 
  * @returns left-time
@@ -434,6 +631,21 @@ function getCodeTimeLeft() {
     let beginTime = Math.floor(ts / 30) * 30;
     let endTime = beginTime + 30;
     let ret = endTime - ts;
+    if(ret > 9)
+        return ret.toString();
+    return '0' + ret.toString();
+}
+
+/**
+ * generate time left until next otp-code becomes active
+ * 
+ * @returns time left for next code to be active
+ */
+function getNextCodeTimeLeft() {
+    let ts = Math.floor(Date.now()/1000); // current timestamp
+    let currentPeriod = Math.floor(ts / 30);
+    let nextPeriodStart = (currentPeriod + 1) * 30;
+    let ret = nextPeriodStart - ts;
     if(ret > 9)
         return ret.toString();
     return '0' + ret.toString();
@@ -808,6 +1020,21 @@ function varintLength(value) {
 
 function base32Encode(data) {
     return base32.encode(data);
+}
+
+/**
+ * 从tooltip中复制OTP代码
+ * @param {string} code - 要复制的代码
+ */
+function copyCodeFromTooltip(code) {
+    if (code) {
+        copyStr(code).then(() => {
+            showCustomAlert('已复制代码: ' + code);
+        }).catch((error) => {
+            console.error('复制失败:', error);
+            showCustomAlert('复制失败，请重试');
+        });
+    }
 }
 
 /**

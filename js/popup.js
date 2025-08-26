@@ -889,6 +889,21 @@ function addQRCodeClick(container) {
             btn.addEventListener('mouseenter', function() {
                 if (popup && desc && secret) {
                     generateQRCode(desc, secret, popup);
+                    
+                    // 智能定位：检测是否需要向上弹出
+                    const btnRect = this.getBoundingClientRect();
+                    const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+                    const popupHeight = 250; // 估算弹出窗口高度 (180px 二维码 + padding + 文字)
+                    const spaceBelow = windowHeight - btnRect.bottom;
+                    const spaceAbove = btnRect.top;
+                    
+                    // 如果下方空间不足且上方空间充足，则向上弹出
+                    if (spaceBelow < popupHeight && spaceAbove > popupHeight) {
+                        popup.classList.add('qrcode-popup-up');
+                    } else {
+                        popup.classList.remove('qrcode-popup-up');
+                    }
+                    
                     popup.style.display = 'block';
                 }
             });
@@ -900,6 +915,8 @@ function addQRCodeClick(container) {
                     setTimeout(() => {
                         if (!popup.matches(':hover') && !btn.matches(':hover')) {
                             popup.style.display = 'none';
+                            // 清除定位类
+                            popup.classList.remove('qrcode-popup-up');
                         }
                     }, 100);
                 }
@@ -913,6 +930,8 @@ function addQRCodeClick(container) {
                 
                 popup.addEventListener('mouseleave', function() {
                     this.style.display = 'none';
+                    // 清除定位类
+                    this.classList.remove('qrcode-popup-up');
                 });
             }
             

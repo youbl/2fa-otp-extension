@@ -396,21 +396,29 @@ function importSecrets() {
             let item = arr[i].trim();
             if(item.length === 0) 
                 continue;
-            let idx = item.lastIndexOf(':');
+            // Find the first colon (not lastIndexOf) to split desc and value
+            // This handles cases where URL might contain colons
+            let idx = item.indexOf(':');
             if(idx <= 0 || idx >= item.length - 1)
                 continue;
             let desc = item.substring(0, idx);
             let value = item.substring(idx+1);
             // Support new format: desc:secret|url or old format: desc:secret
             let secret, url = '';
-            let pipeIdx = value.lastIndexOf('|');
+            let pipeIdx = value.indexOf('|');
             if (pipeIdx > 0 && pipeIdx < value.length - 1) {
                 secret = value.substring(0, pipeIdx);
                 url = value.substring(pipeIdx + 1);
             } else {
                 secret = value;
             }
-            result.push([desc, secret, url]);
+            // Trim whitespace
+            desc = desc.trim();
+            secret = secret.trim();
+            url = url.trim();
+            if(desc && secret) {
+                result.push([desc, secret, url]);
+            }
         }
         
         if(result.length <= 0)

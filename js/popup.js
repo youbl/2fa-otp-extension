@@ -37,17 +37,25 @@ function startRun() {
     document.getElementById('btnShowAddCode').addEventListener('click', function (){
         clearCanvas();
         document.getElementById('dialogAdd').style.display = 'block';
+        document.getElementById('txtName').value = '';
+        document.getElementById('txtSecret').value = '';
+        document.getElementById('txtUrl').value = '';
         document.getElementById('txtName').focus();
     });
     // confirm event in add-key dialog
     document.getElementById('btnAddCode').addEventListener('click', function (){
         let desc = document.getElementById('txtName').value.trim();
         let secret = document.getElementById('txtSecret').value.trim();
+        let url = document.getElementById('txtUrl').value.trim();
         if(!desc || !secret)
             return alert('title and key are required!');
-        addNode(desc, secret);            
-        addSecret(desc, secret);
+        addNode(desc, secret, url);            
+        addSecret(desc, secret, url);
         document.getElementById('dialogAdd').style.display = 'none';
+        // Clear input fields
+        document.getElementById('txtName').value = '';
+        document.getElementById('txtSecret').value = '';
+        document.getElementById('txtUrl').value = '';
     });
     // export all otp key from storage to clipboard
     document.getElementById('btnExport').addEventListener('click', function (){
@@ -78,7 +86,7 @@ function startRun() {
     });
     tooltip.addEventListener('mouseleave', () => {
         tooltip.style.display = 'none';
-        // 清理可能存在的定时器
+        // Clear any existing timers
         const tooltipUpdateTimers = document.querySelectorAll('.code');
         tooltipUpdateTimers.forEach(element => {
             const timer = element._tooltipUpdateTimer;
@@ -89,7 +97,7 @@ function startRun() {
         });
     });
     
-    // 为tooltip添加点击事件监听器（事件委托）
+    // Add click event listener for tooltip (event delegation)
     tooltip.addEventListener('click', function(event) {
         const target = event.target;
         console.log('Tooltip clicked, target:', target, 'classes:', target.classList);
@@ -98,7 +106,7 @@ function startRun() {
             console.log('Found tooltip-code with data-code:', code);
             if (code) {
                 copyCodeFromTooltip(code);
-                event.stopPropagation(); // 防止事件冒泡
+                event.stopPropagation(); // Prevent event bubbling
             }
         }
     });
@@ -114,84 +122,84 @@ function addHoverLayer() {
     codeElementArr.forEach(codeElement => {
         const codeNode = codeElement;
         
-        // 避免重复绑定事件
+        // Avoid duplicate event binding
         if (codeElement.getAttribute('hover-bindclick') !== null) {
             return;
         }
-        // 用于存储固定的左侧位置
+        // Store fixed left position
         let fixedLeftPosition = 0;
         
         codeElement.addEventListener('mouseenter', (event, obj) => {
             //alert(codeNode.clientHeight);
             tooltip.style.display = 'block';
             
-            // 计算OTP代码列的右边界位置（固定左右位置）
+            // Calculate right boundary position of OTP code column (fixed left/right position)
             const codeRect = codeElement.getBoundingClientRect();
-            fixedLeftPosition = codeRect.right - 15; // 代码列右侧左移15px，轻微覆盖便于鼠标移入
+            fixedLeftPosition = codeRect.right - 15; // Shift 15px left from code column right edge for slight overlap to facilitate mouse entry
             
-            // 获取密钥以生成下一个代码
+            // Get secret to generate next code
             const parentLi = codeElement.closest('li');
             const secretElement = parentLi ? parentLi.querySelector('.copy-btn[data]') : null;
             const secret = secretElement ? secretElement.getAttribute('data') : '';
             
-            // 生成双代码tooltip内容
+            // Generate dual code tooltip content
             const currentCode = codeNode.innerText;
             const nextCode = secret ? getNextCode(secret) : '';
             const currentTimeLeft = getCodeTimeLeft();
             const nextTimeLeft = getNextCodeTimeLeft();
             
             const tooltipHtml = `
-                <div style="margin-bottom: 8px; font-weight: bold; color: #666;">📋 点击下方代码即可复制:</div>
+                <div style="margin-bottom: 8px; font-weight: bold; color: #666;">📋 Click code below to copy:</div>
                 <div class="tooltip-code-item tooltip-current">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>当前代码:</span>
-                        <span style="color: #0066cc; font-size: 11px;">${currentTimeLeft}秒后过期</span>
+                        <span>Current code:</span>
+                        <span style="color: #0066cc; font-size: 11px;">Expires in ${currentTimeLeft}s</span>
                     </div>
-                    <div class="tooltip-code tooltip-code-current" style="color: #0066cc; cursor: pointer;" data-code="${currentCode}" title="点击复制">${currentCode}</div>
+                    <div class="tooltip-code tooltip-code-current" style="color: #0066cc; cursor: pointer;" data-code="${currentCode}" title="Click to copy">${currentCode}</div>
                 </div>
                 <div class="tooltip-code-item tooltip-next">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span>下个代码:</span>
-                            <span style="color: #22aa22; font-size: 11px;">还有${nextTimeLeft}秒生效</span>
+                            <span>Next code:</span>
+                            <span style="color: #22aa22; font-size: 11px;">Active in ${nextTimeLeft}s</span>
                         </div>
-                        <div class="tooltip-code tooltip-code-next" style="color: #22aa22; cursor: pointer;" data-code="${nextCode}" title="点击复制">${nextCode}</div>
+                        <div class="tooltip-code tooltip-code-next" style="color: #22aa22; cursor: pointer;" data-code="${nextCode}" title="Click to copy">${nextCode}</div>
                     </div>
             `;
             
             tooltip.innerHTML = tooltipHtml;
             
-            // 启动实时更新定时器
+            // Start real-time update timer
             if (codeElement._tooltipUpdateTimer) {
                 clearInterval(codeElement._tooltipUpdateTimer);
             }
             codeElement._tooltipUpdateTimer = setInterval(updateTooltipContent, 1000);
             
-            // 初始定位
+            // Initial positioning
             updateTooltipPosition(event.pageY);
         });
 
         codeElement.addEventListener('mousemove', (event) => {
             if (tooltip.style.display === 'block') {
-                // 只更新垂直位置，水平位置保持固定
+                // Only update vertical position, keep horizontal position fixed
                 updateTooltipPosition(event.pageY);
             }
         });
 
         codeElement.addEventListener('mouseleave', () => {
-            // 延迟隐藏，允许鼠标移到tooltip上
+            // Delay hiding to allow mouse to move to tooltip
             setTimeout(() => {
                 if (!tooltip.matches(':hover') && !codeElement.matches(':hover')) {
                     tooltip.style.display = 'none';
-                    // 清理定时器
+                    // Clear timer
                     if (codeElement._tooltipUpdateTimer) {
                         clearInterval(codeElement._tooltipUpdateTimer);
                         codeElement._tooltipUpdateTimer = null;
                     }
                 }
-            }, 150); // 150ms延迟，给用户时间移动鼠标
+            }, 150); // 150ms delay to give user time to move mouse
         });
         
-        // 实时更新tooltip内容的函数
+        // Function to update tooltip content in real-time
         function updateTooltipContent() {
             if (tooltip.style.display === 'block') {
                 const parentLi = codeElement.closest('li');
@@ -204,20 +212,20 @@ function addHoverLayer() {
                 const nextTimeLeft = getNextCodeTimeLeft();
                 
                 const tooltipHtml = `
-                    <div style="margin-bottom: 8px; font-weight: bold; color: #666;">📋 点击下方代码即可复制:</div>
+                    <div style="margin-bottom: 8px; font-weight: bold; color: #666;">📋 Click code below to copy:</div>
                     <div class="tooltip-code-item tooltip-current">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span>当前代码:</span>
-                            <span style="color: #0066cc; font-size: 11px;">${currentTimeLeft}秒后过期</span>
+                            <span>Current code:</span>
+                            <span style="color: #0066cc; font-size: 11px;">Expires in ${currentTimeLeft}s</span>
                         </div>
-                        <div class="tooltip-code tooltip-code-current" style="color: #0066cc; cursor: pointer;" data-code="${currentCode}" title="点击复制">${currentCode}</div>
+                        <div class="tooltip-code tooltip-code-current" style="color: #0066cc; cursor: pointer;" data-code="${currentCode}" title="Click to copy">${currentCode}</div>
                     </div>
                     <div class="tooltip-code-item tooltip-next">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span>下个代码:</span>
-                            <span style="color: #22aa22; font-size: 11px;">还有${nextTimeLeft}秒生效</span>
+                            <span>Next code:</span>
+                            <span style="color: #22aa22; font-size: 11px;">Active in ${nextTimeLeft}s</span>
                         </div>
-                        <div class="tooltip-code tooltip-code-next" style="color: #22aa22; cursor: pointer;" data-code="${nextCode}" title="点击复制">${nextCode}</div>
+                        <div class="tooltip-code tooltip-code-next" style="color: #22aa22; cursor: pointer;" data-code="${nextCode}" title="Click to copy">${nextCode}</div>
                     </div>
                 `;
                 
@@ -225,18 +233,18 @@ function addHoverLayer() {
             }
         }
         
-        // 更新tooltip位置的辅助函数
+        // Helper function to update tooltip position
         function updateTooltipPosition(mouseY) {
             const windowHeight = window.innerHeight || document.documentElement.clientHeight;
-            const tooltipHeight = 120; // 更新tooltip高度估算（双代码显示需要更多空间）
+            const tooltipHeight = 120; // Estimated tooltip height (dual code display requires more space)
             let topPosition = mouseY + 1;
             
-            // 防止tooltip超出窗口底部
+            // Prevent tooltip from exceeding window bottom
             if (topPosition + tooltipHeight > windowHeight) {
                 topPosition = windowHeight - tooltipHeight - 10;
             }
             
-            // 防止tooltip超出窗口顶部
+            // Prevent tooltip from exceeding window top
             if (topPosition < 10) {
                 topPosition = 10;
             }
@@ -245,7 +253,7 @@ function addHoverLayer() {
             tooltip.style.top = topPosition + 'px';
         }
         
-        // 标记已绑定，避免重复绑定
+        // Mark as bound to avoid duplicate binding
         codeElement.setAttribute('hover-bindclick', '1');
     });
 }
@@ -353,8 +361,20 @@ function exportSecrets() {
             let ret = '';
             if(arrSecrets) {
                 Object.keys(arrSecrets).forEach((key) => {
-                    let secret = arrSecrets[key];
-                    ret += key + ':' + secret + '\n';
+                    let item = arrSecrets[key];
+                    // Compatible with old format (secret string only) and new format (object with secret and url)
+                    let secret, url = '';
+                    if (typeof item === 'string') {
+                        secret = item;
+                    } else {
+                        secret = item.secret || '';
+                        url = item.url || '';
+                    }
+                    if (url) {
+                        ret += key + ':' + secret + '|' + url + '\n';
+                    } else {
+                        ret += key + ':' + secret + '\n';
+                    }
                 });
             }
             if(!ret){
@@ -380,8 +400,17 @@ function importSecrets() {
             if(idx <= 0 || idx >= item.length - 1)
                 continue;
             let desc = item.substring(0, idx);
-            let secret = item.substring(idx+1);
-            result.push([desc, secret]);
+            let value = item.substring(idx+1);
+            // Support new format: desc:secret|url or old format: desc:secret
+            let secret, url = '';
+            let pipeIdx = value.lastIndexOf('|');
+            if (pipeIdx > 0 && pipeIdx < value.length - 1) {
+                secret = value.substring(0, pipeIdx);
+                url = value.substring(pipeIdx + 1);
+            } else {
+                secret = value;
+            }
+            result.push([desc, secret, url]);
         }
         
         if(result.length <= 0)
@@ -394,8 +423,14 @@ function importSecrets() {
                     arrSecrets = {};
                 for(let i=0,j=result.length;i<j;i++){
                     let item = result[i];
-                    //console.log(item[0] + ' key: ' + item[1]);            
-                    arrSecrets[item[0]] = item[1];
+                    let desc = item[0];
+                    let secret = item[1];
+                    let url = item[2] || '';
+                    // Save as new format: {secret: secret, url: url}
+                    arrSecrets[desc] = {
+                        secret: secret,
+                        url: url
+                    };
                 }
                 setStorage(arrSecrets)
                     .then(refreshCode);
@@ -417,8 +452,16 @@ function refreshCode(){
                 .then((arrSecrets)=>{
                     if(arrSecrets) {
                         Object.keys(arrSecrets).forEach((key) => {
-                            let secret = arrSecrets[key];
-                            addNode(key, secret);
+                            let item = arrSecrets[key];
+                            // Compatible with old format (secret string only) and new format (object with secret and url)
+                            let secret, url = '';
+                            if (typeof item === 'string') {
+                                secret = item;
+                            } else {
+                                secret = item.secret || '';
+                                url = item.url || '';
+                            }
+                            addNode(key, secret, url);
                         });
                     }
                 });    
@@ -484,7 +527,8 @@ function addDelClick(container){
 }
 
 // add a line to page table
-function addNode(desc, secret) {
+function addNode(desc, secret, url) {
+    url = url || '';
     let codeTml = document.getElementById('codeItemTemp').innerHTML;
     
     let endTime = getCodeTimeLeft();
@@ -493,7 +537,8 @@ function addNode(desc, secret) {
     let itemHtml = codeTml.replace(/\{\{desc\}\}/g, desc)
         .replace(/\{\{code\}\}/g, code)
         .replace(/\{\{secret\}\}/g, secret)
-        .replace(/\{\{endTime\}\}/g, endTime);
+        .replace(/\{\{endTime\}\}/g, endTime)
+        .replace(/\{\{url\}\}/g, url);
 
     let root = document.getElementById('divCode');
     let ulList = root.getElementsByTagName('UL');
@@ -511,9 +556,10 @@ function addNode(desc, secret) {
         let container = liList[i]; 
         addCopyClick(container);
         addDelClick(container);
-        addQRCodeClick(container);}
+        addQRCodeClick(container);
+        addUrlClick(container);}
         
-        // 重新绑定悬停效果，确保新添加的代码也有tooltip
+        // Rebind hover effect to ensure newly added codes also have tooltip
         addHoverLayer();
         
         __codeRefreshing = false;
@@ -521,12 +567,17 @@ function addNode(desc, secret) {
 }
 
 // add a record into LocalStorage
-function addSecret(desc, secret){
+function addSecret(desc, secret, url){
+    url = url || '';
     getStorage()
         .then((arrSecrets)=>{
             if(!arrSecrets)
                 arrSecrets = {};
-            arrSecrets[desc] = secret;
+            // Save as new format: {secret: secret, url: url}
+            arrSecrets[desc] = {
+                secret: secret,
+                url: url
+            };
             setStorage(arrSecrets);
         });
 }
@@ -585,18 +636,18 @@ function getNextCode(secret) {
         return '';
     }
     
-    // 简单的方法：临时修改Date.now()来模拟未来时间
+    // Simple method: temporarily modify Date.now() to simulate future time
     const originalNow = Date.now;
     const originalDateNow = Date.now;
     
     try {
-        // 计算下一个30秒周期的开始时间
+        // Calculate the start time of the next 30-second period
         const currentTime = Math.floor(Date.now() / 1000);
         const currentPeriod = Math.floor(currentTime / 30);
         const nextPeriodStart = (currentPeriod + 1) * 30;
         const nextPeriodMs = nextPeriodStart * 1000;
         
-        // 临时重写Date.now()
+        // Temporarily override Date.now()
         Date.now = function() { return nextPeriodMs; };
         
         let totp = new OTPAuth.TOTP({
@@ -607,16 +658,16 @@ function getNextCode(secret) {
             secret: secret,
         });
         
-        // 生成下一个周期的代码
+        // Generate code for the next period
         const nextCode = totp.generate();
         
         return nextCode;
         
     } catch(e) {
-        console.error('生成下一个OTP代码失败:', e);
+        console.error('Failed to generate next OTP code:', e);
         return '';
     } finally {
-        // 恢复原始的Date.now()
+        // Restore original Date.now()
         Date.now = originalNow;
     }
 }
@@ -1023,31 +1074,31 @@ function base32Encode(data) {
 }
 
 /**
- * 从tooltip中复制OTP代码
- * @param {string} code - 要复制的代码
+ * Copy OTP code from tooltip
+ * @param {string} code - Code to copy
  */
 function copyCodeFromTooltip(code) {
     if (code) {
         copyStr(code).then(() => {
-            showCustomAlert('已复制代码: ' + code);
+            showCustomAlert('Copied code: ' + code);
         }).catch((error) => {
-            console.error('复制失败:', error);
-            showCustomAlert('复制失败，请重试');
+            console.error('Copy failed:', error);
+            showCustomAlert('Copy failed, please try again');
         });
     }
 }
 
 /**
- * 生成otpauth://格式的URI
- * @param {string} desc - 密钥描述/标题
- * @param {string} secret - OTP密钥
+ * Generate otpauth:// format URI
+ * @param {string} desc - Secret description/title
+ * @param {string} secret - OTP secret
  * @returns {string} otpauth URI
  */
 function generateOtpAuthUrl(desc, secret) {
     const issuer = 'beinetOtpExt';
     const account = desc;
     
-    // 构建otpauth URI
+    // Build otpauth URI
     const params = new URLSearchParams({
         secret: secret,
         issuer: issuer,
@@ -1060,19 +1111,19 @@ function generateOtpAuthUrl(desc, secret) {
 }
 
 /**
- * 生成并显示二维码
- * @param {string} desc - 密钥描述
- * @param {string} secret - OTP密钥
- * @param {Element} container - 二维码容器元素
+ * Generate and display QR code
+ * @param {string} desc - Secret description
+ * @param {string} secret - OTP secret
+ * @param {Element} container - QR code container element
  */
 function generateQRCode(desc, secret, container) {
-    // 清空容器
+    // Clear container
     container.innerHTML = '';
     
-    // 生成otpauth URL
+    // Generate otpauth URL
     const otpauthUrl = generateOtpAuthUrl(desc, secret);
     
-    // 创建二维码
+    // Create QR code
     try {
         const qr = new QRCode(container, {
             text: otpauthUrl,
@@ -1083,7 +1134,7 @@ function generateQRCode(desc, secret, container) {
             correctLevel: QRCode.CorrectLevel.M
         });
         
-        // 添加提示文字
+        // Add tip text
         const tipDiv = document.createElement('div');
         tipDiv.style.textAlign = 'center';
         tipDiv.style.fontSize = '12px';
@@ -1093,14 +1144,14 @@ function generateQRCode(desc, secret, container) {
         container.appendChild(tipDiv);
         
     } catch (error) {
-        console.error('生成二维码失败:', error);
-        container.innerHTML = '<div style="color: red; font-size: 12px;">生成二维码失败</div>';
+        console.error('Failed to generate QR code:', error);
+        container.innerHTML = '<div style="color: red; font-size: 12px;">Failed to generate QR code</div>';
     }
 }
 
 /**
- * 添加二维码按钮的事件监听
- * @param {Element} container - 包含二维码按钮的容器
+ * Add event listener for QR code button
+ * @param {Element} container - Container containing QR code button
  */
 function addQRCodeClick(container) {
     const qrcodeBtns = container.getElementsByClassName('qrcode-btn');
@@ -1112,19 +1163,19 @@ function addQRCodeClick(container) {
             const popupId = 'qrcode-popup-' + desc;
             const popup = document.getElementById(popupId);
             
-            // 鼠标悬停显示二维码
+            // Show QR code on mouse hover
             btn.addEventListener('mouseenter', function() {
                 if (popup && desc && secret) {
                     generateQRCode(desc, secret, popup);
                     
-                    // 智能定位：检测是否需要向上弹出
+                    // Smart positioning: detect if popup should appear above
                     const btnRect = this.getBoundingClientRect();
                     const windowHeight = window.innerHeight || document.documentElement.clientHeight;
-                    const popupHeight = 250; // 估算弹出窗口高度 (180px 二维码 + padding + 文字)
+                    const popupHeight = 250; // Estimated popup height (180px QR code + padding + text)
                     const spaceBelow = windowHeight - btnRect.bottom;
                     const spaceAbove = btnRect.top;
                     
-                    // 如果下方空间不足且上方空间充足，则向上弹出
+                    // If insufficient space below and sufficient space above, popup upward
                     if (spaceBelow < popupHeight && spaceAbove > popupHeight) {
                         popup.classList.add('qrcode-popup-up');
                     } else {
@@ -1135,21 +1186,21 @@ function addQRCodeClick(container) {
                 }
             });
             
-            // 鼠标离开隐藏二维码
+            // Hide QR code on mouse leave
             btn.addEventListener('mouseleave', function() {
                 if (popup) {
-                    // 延迟隐藏，允许鼠标移到二维码上
+                    // Delay hiding to allow mouse to move to QR code
                     setTimeout(() => {
                         if (!popup.matches(':hover') && !btn.matches(':hover')) {
                             popup.style.display = 'none';
-                            // 清除定位类
+                            // Clear positioning class
                             popup.classList.remove('qrcode-popup-up');
                         }
                     }, 100);
                 }
             });
             
-            // 二维码容器本身的鼠标事件
+            // Mouse events for QR code container itself
             if (popup) {
                 popup.addEventListener('mouseenter', function() {
                     this.style.display = 'block';
@@ -1157,12 +1208,55 @@ function addQRCodeClick(container) {
                 
                 popup.addEventListener('mouseleave', function() {
                     this.style.display = 'none';
-                    // 清除定位类
+                    // Clear positioning class
                     this.classList.remove('qrcode-popup-up');
                 });
             }
             
-            btn.setAttribute('qrcode-bindclick', '1'); // 避免重复绑定
+            btn.setAttribute('qrcode-bindclick', '1'); // Avoid duplicate binding
+        }
+    }
+}
+
+/**
+ * Add event listener for URL button
+ * @param {Element} container - Container containing URL button
+ */
+function addUrlClick(container) {
+    const urlBtns = container.getElementsByClassName('url-btn');
+    for (let i = 0, j = urlBtns.length; i < j; i++) {
+        const btn = urlBtns[i];
+        if (btn.getAttribute('url-bindclick') === null) {
+            btn.addEventListener('click', function() {
+                const url = this.getAttribute('data-url');
+                if (url) {
+                    // Open URL in new tab without requiring tabs permission
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            });
+            btn.setAttribute('url-bindclick', '1'); // Avoid duplicate binding
+        }
+    }
+    
+    // Show/hide URL button container based on whether URL exists
+    const urlBtnContainer = container.getElementsByClassName('url-btn-container')[0];
+    if (urlBtnContainer) {
+        const urlBtn = urlBtnContainer.getElementsByClassName('url-btn')[0];
+        if (urlBtn) {
+            const url = urlBtn.getAttribute('data-url');
+            if (url && url.trim()) {
+                urlBtnContainer.style.display = '';
+            } else {
+                urlBtnContainer.style.display = 'none';
+            }
+        } else {
+            urlBtnContainer.style.display = 'none';
         }
     }
 }

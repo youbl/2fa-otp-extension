@@ -16,14 +16,16 @@
             display: none; 
             text-align: center; 
             width: 300px; 
-            height: 80px; 
+            min-height: 80px; 
+            height: auto;
             position: fixed; 
-            top: 50%; 
-            left: 50%; 
+            top: 50%;
+            left: 50%;
             transform: translate(-50%, -50%);
             background-color: #c0c8e7; 
             border: 1px solid #ccc; 
             padding: 20px;
+            overflow: visible;
         }
         .dialog-add {
             position: absolute;
@@ -165,6 +167,22 @@
             background-color: #e6f3ff;
             border-color: #0066cc;
         }
+
+        .url-btn {
+            background-color: #f0fff0;
+            color: #22aa22;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            padding: 3px 6px;
+            margin-right: 5px;
+        }
+
+        .url-btn:hover {
+            background-color: #e6ffe6;
+            border-color: #22aa22;
+        }
     </style>
 </head>
 
@@ -197,6 +215,12 @@
                 </span>
             </div>
             <div style="padding: 5px;">
+                <span class="multi-lang" style="display:inline-block;width:50px;text-align:right">URL:</span>
+                <span style="display: inline-block;width:230px;">
+                    <input type="text" id="txtUrl" style="width:99%" placeholder="https://example.com">
+                </span>
+            </div>
+            <div style="padding: 5px;">
                 <div style="float: left;">
                     <span class="multi-lang" style="display: inline-block;width:50px;text-align:right">Otp-Key:</span>
                     <span style="display: inline-block;width:160px;">
@@ -224,6 +248,9 @@
                 <div style="flex: 0 0 27px; padding-left:10px; padding-right:5px;" class="endTime">{{endTime}}s</div>
                 <div style="flex: 0 0 50px; font-weight: bold;" class="code"><a href="#0" class="copy-btn" data="{{code}}">{{code}}</a></div>
                 <div style="flex: 1; font-weight: bold; padding-left:5px;" class="desc">{{desc}}</div>
+                <div style="flex: 0 0 auto; padding-right: 5px; display: none;" class="url-btn-container">
+                    <button class="url-btn" data-url="{{url}}" title="{{url}}">URL</button>
+                </div>
                 <div style="flex: 0 0 auto; padding-right: 5px;" class="qrcode-hover">
                     <button class="qrcode-btn multi-lang" data-desc="{{desc}}" data-secret="{{secret}}">QRCode</button>
                     <div class="qrcode-popup" id="qrcode-popup-{{desc}}"></div>

@@ -28,9 +28,9 @@ It also tackles a few real-world pain points:
 
 ![Bulk export to clipboard](otp3.png)
 
-![Export single QR-Code](otp4.png)
+![Export single QR-Code](otp4.jpg)
 
-![Hover popup showing![Hover popup showing current and next code](otp5.png)
+![Hover popup showing![Hover popup showing current and next code](otp5.jpg)
 
 ---
 

@@ -854,11 +854,23 @@ function showCustomAlert(message) {
     const alertContentElement = document.getElementById('alertContent');
     alertContentElement.textContent = message;
     alertElement.style.display = 'block';
+    // enlarge to ~code size, auto-shrink if text overflows width or grows too tall
+    fitAlertFontSize(alertContentElement, 32, 12, 200);
 
     if(__customAlertRuning)
         return;
     __customAlertRuning=true;
     hideCustomAlert();
+}
+
+// shrink font from maxSize down to minSize until text fits within maxHeight (and element width)
+function fitAlertFontSize(el, maxSize, minSize, maxHeight) {
+    el.style.fontSize = maxSize + 'px';
+    let size = maxSize;
+    while (size > minSize && (el.scrollHeight > maxHeight || el.scrollWidth > el.clientWidth)) {
+        size -= 1;
+        el.style.fontSize = size + 'px';
+    }
 }
 
 function hideCustomAlert() {

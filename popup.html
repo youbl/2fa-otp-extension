@@ -13,28 +13,37 @@
         }
 
         .dialog {
-            display: none; 
-            text-align: center; 
-            width: 300px; 
-            min-height: 80px; 
+            display: none;
+            text-align: center;
+            width: 300px;
+            min-height: 80px;
             height: auto;
-            position: fixed; 
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background-color: #c0c8e7; 
-            border: 1px solid #ccc; 
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
             padding: 20px;
             overflow: visible;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         }
         .dialog-add {
             position: absolute;
-            top: 1px;
-            right: 35px;
-            background-color: transparent;
-            color: blue;
-            border: none;
+            top: 8px;
+            right: 40px;
+            background-color: #f0f8ff;
+            color: #0066cc;
+            border: 1px solid #ccc;
+            border-radius: 4px;
             cursor: pointer;
+            font-size: 12px;
+            padding: 3px 8px;
+        }
+        .dialog-add:hover {
+            background-color: #e6f3ff;
+            border-color: #0066cc;
         }
         .dialog-close {
             position: absolute;
@@ -47,7 +56,10 @@
             width: 25px;
             height: 20px;
         }
-        
+        .dialog-close:hover, .win-close:hover {
+            opacity: 0.7;
+        }
+
         .win-close {
             position: absolute;
             top: 5px;
@@ -58,6 +70,45 @@
             cursor: pointer;
             width: 30px;
             height: 30px;
+        }
+
+        .dialog input[type="text"] {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 5px;
+            box-sizing: border-box;
+            font-size: 13px;
+        }
+        .dialog input[type="text"]:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+        }
+
+        #alertContent {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+            padding: 10px 5px;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .multi-lang-btn {
+            display: inline-block;
+            text-decoration: none;
+            color: #0066cc;
+            background-color: #f0f8ff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 3px 8px;
+            font-size: 12px;
+            margin-left: 4px;
+            cursor: pointer;
+        }
+        .multi-lang-btn:hover {
+            background-color: #e6f3ff;
+            border-color: #0066cc;
         }
 
         ul {
@@ -212,6 +263,8 @@
         }
 
         .chip-btn {
+            display: inline-block;
+            text-decoration: none;
             background-color: #f0f8ff;
             color: #0066cc;
             border: 1px solid #ccc;
@@ -290,8 +343,8 @@
                         <input type="text" id="txtSecret" style="width:99%">
                     </span>
                 </div>
-                <div style="float: left; cursor: pointer; color: blue; width:70px;padding-left:5px;">
-                    <label class="multi-lang" for="fileSelect" style="cursor: pointer;">QrCode</label>
+                <div style="float: left; width:70px; padding-left:5px; padding-top:2px;">
+                    <label class="multi-lang chip-btn" for="fileSelect" style="cursor:pointer;">QrCode</label>
                     <input id="fileSelect" style="visibility:hidden;" type="file" accept="image/*"/><br>
                     <canvas id="canvas" style="visibility:hidden;"></canvas>
                 </div>

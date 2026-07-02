@@ -88,16 +88,21 @@ function startRun() {
         tooltip.style.display = 'block';
     });
     tooltip.addEventListener('mouseleave', () => {
-        tooltip.style.display = 'none';
-        // Clear any existing timers
-        const tooltipUpdateTimers = document.querySelectorAll('.code');
-        tooltipUpdateTimers.forEach(element => {
-            const timer = element._tooltipUpdateTimer;
-            if (timer) {
-                clearInterval(timer);
-                element._tooltipUpdateTimer = null;
+        // Delay hiding so a brief cursor crossing (code <-> tooltip) doesn't flash-hide the tooltip
+        setTimeout(() => {
+            if (!tooltip.matches(':hover') && !document.querySelector('.code:hover')) {
+                tooltip.style.display = 'none';
+                // Clear any existing timers
+                const tooltipUpdateTimers = document.querySelectorAll('.code');
+                tooltipUpdateTimers.forEach(element => {
+                    const timer = element._tooltipUpdateTimer;
+                    if (timer) {
+                        clearInterval(timer);
+                        element._tooltipUpdateTimer = null;
+                    }
+                });
             }
-        });
+        }, 150);
     });
     
     // Add click event listener for tooltip (event delegation)
@@ -129,17 +134,10 @@ function addHoverLayer() {
         if (codeElement.getAttribute('hover-bindclick') !== null) {
             return;
         }
-        // Store fixed left position
-        let fixedLeftPosition = 0;
-        
+
         codeElement.addEventListener('mouseenter', (event, obj) => {
-            //alert(codeNode.clientHeight);
             tooltip.style.display = 'block';
-            
-            // Calculate right boundary position of OTP code column (fixed left/right position)
-            const codeRect = codeElement.getBoundingClientRect();
-            fixedLeftPosition = codeRect.right - 15; // Shift 15px left from code column right edge for slight overlap to facilitate mouse entry
-            
+
             // Get secret to generate next code
             const parentLi = codeElement.closest('li');
             const secretElement = parentLi ? parentLi.querySelector('.copy-btn[data]') : null;
@@ -177,21 +175,14 @@ function addHoverLayer() {
             }
             codeElement._tooltipUpdateTimer = setInterval(updateTooltipContent, 1000);
             
-            // Initial positioning
-            updateTooltipPosition(event.pageY);
-        });
-
-        codeElement.addEventListener('mousemove', (event) => {
-            if (tooltip.style.display === 'block') {
-                // Only update vertical position, keep horizontal position fixed
-                updateTooltipPosition(event.pageY);
-            }
+            // Position relative to the code row (does not follow the cursor)
+            updateTooltipPosition();
         });
 
         codeElement.addEventListener('mouseleave', () => {
-            // Delay hiding to allow mouse to move to tooltip
+            // Delay hiding to allow mouse to move to tooltip (or to another code row)
             setTimeout(() => {
-                if (!tooltip.matches(':hover') && !codeElement.matches(':hover')) {
+                if (!tooltip.matches(':hover') && !document.querySelector('.code:hover')) {
                     tooltip.style.display = 'none';
                     // Clear timer
                     if (codeElement._tooltipUpdateTimer) {
@@ -236,23 +227,21 @@ function addHoverLayer() {
             }
         }
         
-        // Helper function to update tooltip position
-        function updateTooltipPosition(mouseY) {
+        // Position the tooltip relative to the code row (not following the cursor):
+        // place it just below the row, or flip above if it would overflow the bottom.
+        function updateTooltipPosition() {
+            const codeRect = codeElement.getBoundingClientRect();
             const windowHeight = window.innerHeight || document.documentElement.clientHeight;
             const tooltipHeight = 120; // Estimated tooltip height (dual code display requires more space)
-            let topPosition = mouseY + 1;
-            
-            // Prevent tooltip from exceeding window bottom
+            let topPosition = codeRect.bottom + 6;
             if (topPosition + tooltipHeight > windowHeight) {
-                topPosition = windowHeight - tooltipHeight - 10;
+                topPosition = codeRect.top - tooltipHeight - 6;
             }
-            
-            // Prevent tooltip from exceeding window top
-            if (topPosition < 10) {
-                topPosition = 10;
+            if (topPosition < 5) {
+                topPosition = 5;
             }
-            
-            tooltip.style.left = fixedLeftPosition + 'px';
+            // 15px overlap with the code's right edge to bridge the mouse from code to tooltip
+            tooltip.style.left = (codeRect.right - 15) + 'px';
             tooltip.style.top = topPosition + 'px';
         }
         
@@ -503,7 +492,7 @@ function refreshCode(){
             let code = getCode(secret);
     
             endTimeNode.innerText = endTime + 's';
-            if (parseInt(endTime, 10) < 5) {
+            if (parseInt(endTime, 10) < 11) {
                 endTimeNode.classList.add('urgent');
             } else {
                 endTimeNode.classList.remove('urgent');

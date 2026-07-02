@@ -75,6 +75,9 @@ function startRun() {
         parseKeyFromQRCode(file);
     });
 
+    // search box: filter rows by title or url on keyup
+    document.getElementById('searchInput').addEventListener('keyup', filterCodes);
+
     refreshCode();
     // regenerate otp-code per second
     setInterval(refreshCode, 1000);
@@ -347,6 +350,15 @@ function changeDomTextByLanguage(json) {
     const domArr = document.getElementsByClassName('multi-lang');
     for(let i=0, j=domArr.length; i<j; i++) {
         const dom = domArr[i];
+        // inputs carry their text in placeholder instead of innerText
+        if(dom.tagName === 'INPUT' && dom.hasAttribute('placeholder')) {
+            const key = dom.placeholder.trim();
+            const langTxt = json[key];
+            if(langTxt !== undefined) {
+                dom.placeholder = langTxt;
+            }
+            continue;
+        }
         const key = dom.innerText.trim();
         const langTxt = json[key];
         if(langTxt !== undefined) {
@@ -472,6 +484,7 @@ function refreshCode(){
                             addNode(key, secret, url);
                         });
                     }
+                    filterCodes();
                 });    
             return;
         }
@@ -499,6 +512,34 @@ function refreshCode(){
         alert('err:' + e.message);
     }finally{
         __codeRefreshing = false;
+    }
+}
+
+// filter list rows by title or url (case-insensitive substring), triggered by search box
+function filterCodes() {
+    const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
+    const root = document.getElementById('divCode');
+    const ulList = root.getElementsByTagName('UL');
+    let matched = 0;
+    if(ulList.length > 0) {
+        const liList = ulList[0].getElementsByTagName('LI');
+        for(let i=0, j=liList.length; i<j; i++) {
+            const li = liList[i];
+            const descNode = li.querySelector('.desc');
+            const urlBtn = li.querySelector('.url-btn');
+            const desc = descNode ? descNode.innerText.toLowerCase() : '';
+            const url = urlBtn ? (urlBtn.getAttribute('data-url') || '').toLowerCase() : '';
+            if(!keyword || desc.indexOf(keyword) >= 0 || url.indexOf(keyword) >= 0) {
+                li.style.display = '';
+                matched++;
+            } else {
+                li.style.display = 'none';
+            }
+        }
+    }
+    const hint = document.getElementById('noMatchHint');
+    if(hint) {
+        hint.style.display = (keyword && matched === 0) ? 'block' : 'none';
     }
 }
 
@@ -569,7 +610,9 @@ function addNode(desc, secret, url) {
         
         // Rebind hover effect to ensure newly added codes also have tooltip
         addHoverLayer();
-        
+        // Re-apply current search filter to the newly added row
+        filterCodes();
+
         __codeRefreshing = false;
     }, 50);
 }

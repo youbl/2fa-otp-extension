@@ -197,7 +197,11 @@
             <a class="multi-lang-btn" lang="en-US" href="#0">English</a>
         </span>
     </div>
+    <div style="padding: 5px 5px 0 5px;">
+        <input type="text" id="searchInput" class="multi-lang" placeholder="Search title or url..." style="width:100%; box-sizing:border-box; padding:5px; border:1px solid #ccc; border-radius:4px;">
+    </div>
     <div id="divCode" style="padding-bottom: 10px;"></div>
+    <div id="noMatchHint" class="multi-lang" style="display:none; padding:10px; text-align:center; color:#999;">No matching key</div>
 
     <!-- replace origin alert dialog -->
     <div id="customAlert" class="dialog" style="overflow: auto;">
@@ -241,12 +245,12 @@
 
     <!-- template for: otp-code table row -->
     <template id="codeItemTemp">
-        <li style="height:30px;">
+        <li style="height:44px;">
             <div style="display: flex; align-items: center; width: 100%;">
                 <div style="flex: 0 0 auto; padding-left: 5px;"><a href="#0" class="del-btn multi-lang" data="{{desc}}">DEL</a></div>
                 <div style="flex: 0 0 auto; padding-left: 5px; display:none;"><a href="#0" class="copy-btn" data="{{secret}}">Key</a></div> 
                 <div style="flex: 0 0 27px; padding-left:10px; padding-right:5px;" class="endTime">{{endTime}}s</div>
-                <div style="flex: 0 0 50px; font-weight: bold;" class="code"><a href="#0" class="copy-btn" data="{{code}}">{{code}}</a></div>
+                <div style="flex: 0 0 150px; font-weight: bold; font-size: 32px; line-height: 1;" class="code"><a href="#0" class="copy-btn" data="{{code}}" style="display:block; width:100%; padding:4px 0; box-sizing:border-box;">{{code}}</a></div>
                 <div style="flex: 1; font-weight: bold; padding-left:5px;" class="desc">{{desc}}</div>
                 <div style="flex: 0 0 auto; padding-right: 5px; display: none;" class="url-btn-container">
                     <button class="url-btn" data-url="{{url}}" title="{{url}}">URL</button>

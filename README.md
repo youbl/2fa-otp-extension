@@ -26,7 +26,11 @@ It also tackles a few real-world pain points:
 
 ![Add key / QR recognition](otp2.png)
 
-![Hover popup showing current and next code](otp3.png)
+![Bulk export to clipboard](otp3.png)
+
+![Export single QR-Code](otp4.png)
+
+![Hover popup showing![Hover popup showing current and next code](otp5.png)
 
 ---
 

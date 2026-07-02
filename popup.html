@@ -69,14 +69,14 @@
             align-items: center;
         }
         ul li:nth-child(even) {
-            background-color: #f2f2f2; 
+            background-color: #f7f9fc;
         }
 
         ul li:nth-child(odd) {
             background-color: #ffffff;
         }
         ul li:hover {
-            background-color: #9e9e82;
+            background-color: #e6f3ff;
         }
 
         .tooltip {
@@ -183,21 +183,80 @@
             background-color: #e6ffe6;
             border-color: #22aa22;
         }
+
+        .copy-btn {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .code {
+            font-family: 'Courier New', Consolas, monospace;
+            color: #1a1a1a;
+            letter-spacing: 1px;
+        }
+
+        .del-btn {
+            display: inline-block;
+            text-decoration: none;
+            background-color: #fff0f0;
+            color: #cc3333;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            padding: 3px 6px;
+        }
+        .del-btn:hover {
+            background-color: #ffe0e0;
+            border-color: #cc3333;
+        }
+
+        .chip-btn {
+            background-color: #f0f8ff;
+            color: #0066cc;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 4px 8px;
+            margin-right: 4px;
+        }
+        .chip-btn:hover {
+            background-color: #e6f3ff;
+            border-color: #0066cc;
+        }
+
+        .endTime {
+            flex: 0 0 auto;
+            margin: 0 8px;
+            background-color: #eee;
+            color: #666;
+            border-radius: 10px;
+            font-size: 11px;
+            padding: 2px 6px;
+            text-align: center;
+            min-width: 32px;
+            box-sizing: border-box;
+        }
+        .endTime.urgent {
+            background-color: #fff0f0;
+            color: #cc3333;
+        }
     </style>
 </head>
 
 <body>
     <img src="img/power.png" id="btnClose" class="win-close"/>
     <div>
-        <button id="btnShowAddCode" class="multi-lang">Add Key</button>
-        <button id="btnExport" class="multi-lang">Export to Clipboard</button>
-        <button id="btnImport" class="multi-lang">Import from Clipboard</button>
+        <button id="btnShowAddCode" class="multi-lang chip-btn">Add Key</button>
+        <button id="btnExport" class="multi-lang chip-btn">Export to Clipboard</button>
+        <button id="btnImport" class="multi-lang chip-btn">Import from Clipboard</button>
         <span style="padding-left:20px;">
             <a class="multi-lang-btn" lang="zh-CN" href="#0">中文</a>
             <a class="multi-lang-btn" lang="en-US" href="#0">English</a>
         </span>
     </div>
-    <div style="padding: 5px 5px 0 5px;">
+    <div style="padding: 5px 5px 6px 5px; border-bottom: 1px solid #eee; margin-bottom: 4px;">
         <input type="text" id="searchInput" class="multi-lang" placeholder="Search title or url..." style="width:100%; box-sizing:border-box; padding:5px; border:1px solid #ccc; border-radius:4px;">
     </div>
     <div id="divCode" style="padding-bottom: 10px;"></div>
@@ -249,7 +308,7 @@
             <div style="display: flex; align-items: center; width: 100%;">
                 <div style="flex: 0 0 auto; padding-left: 5px;"><a href="#0" class="del-btn multi-lang" data="{{desc}}">DEL</a></div>
                 <div style="flex: 0 0 auto; padding-left: 5px; display:none;"><a href="#0" class="copy-btn" data="{{secret}}">Key</a></div> 
-                <div style="flex: 0 0 27px; padding-left:10px; padding-right:5px;" class="endTime">{{endTime}}s</div>
+                <div class="endTime">{{endTime}}s</div>
                 <div style="flex: 0 0 150px; font-weight: bold; font-size: 32px; line-height: 1;" class="code"><a href="#0" class="copy-btn" data="{{code}}" style="display:block; width:100%; padding:4px 0; box-sizing:border-box;">{{code}}</a></div>
                 <div style="flex: 1; font-weight: bold; padding-left:5px;" class="desc">{{desc}}</div>
                 <div style="flex: 0 0 auto; padding-right: 5px; display: none;" class="url-btn-container">

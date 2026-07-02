@@ -503,6 +503,11 @@ function refreshCode(){
             let code = getCode(secret);
     
             endTimeNode.innerText = endTime + 's';
+            if (parseInt(endTime, 10) < 5) {
+                endTimeNode.classList.add('urgent');
+            } else {
+                endTimeNode.classList.remove('urgent');
+            }
             if(code !== copyCodeNode.getAttribute('data')) {
                 copyCodeNode.innerText = code;
                 copyCodeNode.setAttribute('data', code);

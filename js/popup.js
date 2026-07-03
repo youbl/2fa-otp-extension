@@ -160,25 +160,31 @@ function addHoverLayer() {
             // Generate dual code tooltip content
             const currentCode = codeNode.innerText;
             const nextCode = secret ? getNextCode(secret) : '';
+            const nextNextCode = secret ? getCodeAhead(secret, 2) : '';
             const currentTimeLeft = getCodeTimeLeft();
             const nextTimeLeft = getNextCodeTimeLeft();
+            const nextNextTimeLeft = getNextNextCodeTimeLeft();
             
             const tooltipHtml = `
-                <div style="margin-bottom: 8px; font-weight: bold; color: #666;">📋 Click code below to copy:</div>
+                <div style="margin-bottom: 6px; font-weight: bold; color: #666;">📋 Click code to copy:</div>
                 <div class="tooltip-code-item tooltip-current">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>Current code:</span>
-                        <span class="tooltip-current-time" style="color: #0066cc; font-size: 11px;">Expires in ${currentTimeLeft}s</span>
+                        <span class="tooltip-current-time" style="color: #0066cc; font-size: 12px;">Expires in ${currentTimeLeft}s</span>
+                        <div class="tooltip-code tooltip-code-current" style="color: #0066cc; cursor: pointer;" data-code="${currentCode}" title="Click to copy">${currentCode}</div>
                     </div>
-                    <div class="tooltip-code tooltip-code-current" style="color: #0066cc; cursor: pointer;" data-code="${currentCode}" title="Click to copy">${currentCode}</div>
                 </div>
                 <div class="tooltip-code-item tooltip-next">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span>Next code:</span>
-                            <span class="tooltip-next-time" style="color: #22aa22; font-size: 11px;">Active in ${nextTimeLeft}s</span>
-                        </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="tooltip-next-time" style="color: #22aa22; font-size: 12px;">Active in ${nextTimeLeft}s</span>
                         <div class="tooltip-code tooltip-code-next" style="color: #22aa22; cursor: pointer;" data-code="${nextCode}" title="Click to copy">${nextCode}</div>
                     </div>
+                </div>
+                <div class="tooltip-code-item tooltip-nextnext">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="tooltip-nextnext-time" style="color: #999; font-size: 12px;">Active in ${nextNextTimeLeft}s</span>
+                        <div class="tooltip-code tooltip-code-nextnext" style="color: #999; cursor: pointer;" data-code="${nextNextCode}" title="Click to copy">${nextNextCode}</div>
+                    </div>
+                </div>
             `;
             
             tooltip.innerHTML = tooltipHtml;
@@ -217,9 +223,11 @@ function addHoverLayer() {
 
             const currentCode = codeNode.innerText;
             const nextCode = secret ? getNextCode(secret) : '';
+            const nextNextCode = secret ? getCodeAhead(secret, 2) : '';
 
             const curEl = tooltip.querySelector('.tooltip-code-current');
             const nextEl = tooltip.querySelector('.tooltip-code-next');
+            const nextNextEl = tooltip.querySelector('.tooltip-code-nextnext');
             if (curEl && curEl.textContent !== currentCode) {
                 curEl.textContent = currentCode;
                 curEl.setAttribute('data-code', currentCode);
@@ -228,10 +236,16 @@ function addHoverLayer() {
                 nextEl.textContent = nextCode;
                 nextEl.setAttribute('data-code', nextCode);
             }
+            if (nextNextEl && nextNextEl.textContent !== nextNextCode) {
+                nextNextEl.textContent = nextNextCode;
+                nextNextEl.setAttribute('data-code', nextNextCode);
+            }
             const curTime = tooltip.querySelector('.tooltip-current-time');
             const nextTime = tooltip.querySelector('.tooltip-next-time');
+            const nextNextTime = tooltip.querySelector('.tooltip-nextnext-time');
             if (curTime) curTime.textContent = 'Expires in ' + getCodeTimeLeft() + 's';
             if (nextTime) nextTime.textContent = 'Active in ' + getNextCodeTimeLeft() + 's';
+            if (nextNextTime) nextNextTime.textContent = 'Active in ' + getNextNextCodeTimeLeft() + 's';
         }
         
         // Position the tooltip just below the code (left-aligned with it), so the cursor can
@@ -683,25 +697,24 @@ function getCode(secret) {
  * @param {string} secret otp-key
  * @returns next code
  */
-function getNextCode(secret) {
+/**
+ * generate otp-code for a future period (periodsAhead periods after the current one)
+ *
+ * @param {string} secret otp-key
+ * @param {number} periodsAhead how many 30s periods ahead (1 = next, 2 = next-next)
+ * @returns otp-code for that period
+ */
+function getCodeAhead(secret, periodsAhead) {
     if (!secret) {
         return '';
     }
-    
-    // Simple method: temporarily modify Date.now() to simulate future time
+    // temporarily override Date.now() to simulate the target period
     const originalNow = Date.now;
-    const originalDateNow = Date.now;
-    
     try {
-        // Calculate the start time of the next 30-second period
-        const currentTime = Math.floor(Date.now() / 1000);
-        const currentPeriod = Math.floor(currentTime / 30);
-        const nextPeriodStart = (currentPeriod + 1) * 30;
-        const nextPeriodMs = nextPeriodStart * 1000;
-        
-        // Temporarily override Date.now()
-        Date.now = function() { return nextPeriodMs; };
-        
+        const currentPeriod = Math.floor(Math.floor(Date.now() / 1000) / 30);
+        const targetPeriodMs = (currentPeriod + periodsAhead) * 30 * 1000;
+        Date.now = function() { return targetPeriodMs; };
+
         let totp = new OTPAuth.TOTP({
             issuer: 'youbl',
             algorithm: "SHA1",
@@ -709,19 +722,23 @@ function getNextCode(secret) {
             period: 30,
             secret: secret,
         });
-        
-        // Generate code for the next period
-        const nextCode = totp.generate();
-        
-        return nextCode;
-        
+        return totp.generate();
     } catch(e) {
-        console.error('Failed to generate next OTP code:', e);
+        console.error('Failed to generate OTP code:', e);
         return '';
     } finally {
-        // Restore original Date.now()
         Date.now = originalNow;
     }
+}
+
+/**
+ * generate next otp-code (for next 30-second period)
+ *
+ * @param {string} secret otp-key
+ * @returns next code
+ */
+function getNextCode(secret) {
+    return getCodeAhead(secret, 1);
 }
 
 /**
@@ -749,6 +766,21 @@ function getNextCodeTimeLeft() {
     let currentPeriod = Math.floor(ts / 30);
     let nextPeriodStart = (currentPeriod + 1) * 30;
     let ret = nextPeriodStart - ts;
+    if(ret > 9)
+        return ret.toString();
+    return '0' + ret.toString();
+}
+
+/**
+ * generate time left until the next-next otp-code becomes active (2 periods ahead)
+ *
+ * @returns time left for next-next code to be active
+ */
+function getNextNextCodeTimeLeft() {
+    let ts = Math.floor(Date.now()/1000); // current timestamp
+    let currentPeriod = Math.floor(ts / 30);
+    let nextNextPeriodStart = (currentPeriod + 2) * 30;
+    let ret = nextNextPeriodStart - ts;
     if(ret > 9)
         return ret.toString();
     return '0' + ret.toString();

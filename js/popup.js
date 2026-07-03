@@ -234,21 +234,20 @@ function addHoverLayer() {
             if (nextTime) nextTime.textContent = 'Active in ' + getNextCodeTimeLeft() + 's';
         }
         
-        // Position the tooltip relative to the code row (not following the cursor):
-        // place it just below the row, or flip above if it would overflow the bottom.
+        // Position the tooltip just below the code (left-aligned with it), so the cursor can
+        // move straight down into it. Flip above only when there's no room below.
         function updateTooltipPosition() {
             const codeRect = codeElement.getBoundingClientRect();
             const windowHeight = window.innerHeight || document.documentElement.clientHeight;
-            const tooltipHeight = 120; // Estimated tooltip height (dual code display requires more space)
-            let topPosition = codeRect.bottom + 6;
+            const tooltipHeight = tooltip.offsetHeight || 120;
+            let topPosition = codeRect.bottom + 2;
             if (topPosition + tooltipHeight > windowHeight) {
-                topPosition = codeRect.top - tooltipHeight - 6;
+                topPosition = codeRect.top - tooltipHeight - 2;
             }
             if (topPosition < 5) {
                 topPosition = 5;
             }
-            // 15px overlap with the code's right edge to bridge the mouse from code to tooltip
-            tooltip.style.left = (codeRect.right - 15) + 'px';
+            tooltip.style.left = codeRect.left + 'px';
             tooltip.style.top = topPosition + 'px';
         }
         

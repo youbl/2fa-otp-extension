@@ -28,9 +28,9 @@
 
 ![批量导出到粘贴板](otp3.png)
 
-![单个二维码导出](otp4.jpg)
+![单个二维码导出](otp4.png)
 
-![悬停显示当前码、下一码与下下码](otp5.jpg)
+![悬停显示当前码、下一码与下下码](otp5.png)
 
 ---
 
@@ -162,7 +162,7 @@
 │   └── zh-CN.json         # 中英翻译映射
 ├── img/                   # 界面图标（关闭、电源按钮）
 ├── one.png / one128.png   # 扩展图标
-└── otp1.png ~ otp3.png    # README 截图
+└── otp1.png ~ otp5.png    # README 截图
 ```
 
 ### 关键实现点

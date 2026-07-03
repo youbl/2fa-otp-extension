@@ -28,9 +28,9 @@ It also tackles a few real-world pain points:
 
 ![Bulk export to clipboard](otp3.png)
 
-![Export single QR-Code](otp4.jpg)
+![Export single QR-Code](otp4.png)
 
-![Hover popup showing current, next, and next-next codes](otp5.jpg)
+![Hover popup showing current, next, and next-next codes](otp5.png)
 
 ---
 
@@ -161,7 +161,7 @@ Plain HTML / CSS / JavaScript — **no build step, no dependency management**. C
 │   └── zh-CN.json         # zh↔en translation map
 ├── img/                   # UI icons (close, power button)
 ├── one.png / one128.png   # Extension icons
-└── otp1.png ~ otp3.png    # README screenshots
+└── otp1.png ~ otp5.png    # README screenshots
 ```
 
 ### Key implementation notes

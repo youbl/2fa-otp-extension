@@ -158,7 +158,7 @@
 
         .tooltip {
             display: none;
-            position: absolute;
+            position: fixed;
             background: #fff;
             border: 1px solid #ccc;
             border-radius: 6px;
@@ -280,8 +280,9 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 11px;
-            padding: 3px 6px;
+            font-size: 14px;
+            line-height: 1;
+            padding: 1px 7px;
         }
         .del-btn:hover {
             background-color: #ffe0e0;
@@ -307,7 +308,7 @@
 
         .endTime {
             flex: 0 0 auto;
-            margin: 0 8px;
+            margin: 0;
             background-color: #eee;
             color: #666;
             border-radius: 10px;
@@ -395,9 +396,8 @@
     <template id="codeItemTemp">
         <li style="height:44px;">
             <div style="display: flex; align-items: center; width: 100%;">
-                <div style="flex: 0 0 auto; padding-left: 5px;"><a href="#0" class="del-btn multi-lang" data="{{desc}}">DEL</a></div>
-                <div style="flex: 0 0 auto; padding-left: 5px; display:none;"><a href="#0" class="copy-btn" data="{{secret}}">Key</a></div> 
-                <div class="endTime">{{endTime}}s</div>
+                <div style="flex: 0 0 auto; padding: 0 4px 0 5px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;"><a href="#0" class="del-btn" data="{{desc}}">×</a><div class="endTime">{{endTime}}s</div></div>
+                <div style="flex: 0 0 auto; padding-left: 5px; display:none;"><a href="#0" class="copy-btn" data="{{secret}}">Key</a></div>
                 <div style="flex: 0 0 150px; font-weight: bold; font-size: 32px; line-height: 1;" class="code"><a href="#0" class="copy-btn" data="{{code}}" style="display:block; width:100%; padding:4px 0; box-sizing:border-box;">{{code}}</a></div>
                 <div style="flex: 1; font-weight: bold; padding-left:5px;" class="desc">{{desc}}</div>
                 <div style="flex: 0 0 auto; padding-right: 5px; display: none;" class="url-btn-container">
@@ -410,7 +410,7 @@
             </div>
         </li>
     </template>
-    <div id="tooltip" class="tooltip" style="display: none; position: absolute; background: #fff; border: 1px solid #ccc; padding: 5px; z-index: 1000;">
+    <div id="tooltip" class="tooltip" style="display: none; position: fixed; background: #fff; border: 1px solid #ccc; padding: 5px; z-index: 1000;">
         <div id="tooltipContent"></div>
     </div>
     <script src="js/base32.min.js"></script>

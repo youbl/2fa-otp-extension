@@ -45,6 +45,32 @@
             background-color: #e6f3ff;
             border-color: #0066cc;
         }
+
+        .dialog-btn {
+            display: inline-block;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 5px 14px;
+            margin: 0 4px;
+        }
+        .dialog-btn-primary {
+            background-color: #fff0f0;
+            color: #cc3333;
+        }
+        .dialog-btn-primary:hover {
+            background-color: #ffe0e0;
+            border-color: #cc3333;
+        }
+        .dialog-btn-secondary {
+            background-color: #f0f8ff;
+            color: #0066cc;
+        }
+        .dialog-btn-secondary:hover {
+            background-color: #e6f3ff;
+            border-color: #0066cc;
+        }
         .dialog-close {
             position: absolute;
             top: 2px;
@@ -352,6 +378,16 @@
             </div>
         </div>
         <button id="btnAddCode" class="dialog-add multi-lang">Save</button>
+        <img src="img/close.jpg" class="dialog-close"/>
+    </div>
+
+    <!-- dialog for confirm (e.g. delete) -->
+    <div id="dialogConfirm" class="dialog">
+        <div id="confirmContent" style="font-size:14px; color:#333; padding:15px 5px 10px; line-height:1.5;"></div>
+        <div style="text-align:center; padding-top:5px;">
+            <button id="btnConfirmYes" class="dialog-btn dialog-btn-primary multi-lang">Yes</button>
+            <button id="btnConfirmNo" class="dialog-btn dialog-btn-secondary multi-lang">No</button>
+        </div>
         <img src="img/close.jpg" class="dialog-close"/>
     </div>
 

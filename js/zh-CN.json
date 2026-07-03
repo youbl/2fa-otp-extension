@@ -9,5 +9,7 @@
     "DEL":"删除",
     "QRCode":"二维码",
     "Search title or url...":"搜索标题或网址...",
-    "No matching key":"没有匹配的密钥"
+    "No matching key":"没有匹配的密钥",
+    "Yes":"是",
+    "No":"否"
 }

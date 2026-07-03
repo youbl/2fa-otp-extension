@@ -78,6 +78,20 @@ function startRun() {
     // search box: filter rows by title or url on keyup
     document.getElementById('searchInput').addEventListener('keyup', filterCodes);
 
+    // custom confirm dialog: Yes runs the callback, No just closes
+    document.getElementById('btnConfirmYes').addEventListener('click', function() {
+        document.getElementById('dialogConfirm').style.display = 'none';
+        if (__confirmCallback) {
+            const cb = __confirmCallback;
+            __confirmCallback = null;
+            cb();
+        }
+    });
+    document.getElementById('btnConfirmNo').addEventListener('click', function() {
+        __confirmCallback = null;
+        document.getElementById('dialogConfirm').style.display = 'none';
+    });
+
     refreshCode();
     // regenerate otp-code per second
     setInterval(refreshCode, 1000);
@@ -154,14 +168,14 @@ function addHoverLayer() {
                 <div class="tooltip-code-item tooltip-current">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span>Current code:</span>
-                        <span style="color: #0066cc; font-size: 11px;">Expires in ${currentTimeLeft}s</span>
+                        <span class="tooltip-current-time" style="color: #0066cc; font-size: 11px;">Expires in ${currentTimeLeft}s</span>
                     </div>
                     <div class="tooltip-code tooltip-code-current" style="color: #0066cc; cursor: pointer;" data-code="${currentCode}" title="Click to copy">${currentCode}</div>
                 </div>
                 <div class="tooltip-code-item tooltip-next">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <span>Next code:</span>
-                            <span style="color: #22aa22; font-size: 11px;">Active in ${nextTimeLeft}s</span>
+                            <span class="tooltip-next-time" style="color: #22aa22; font-size: 11px;">Active in ${nextTimeLeft}s</span>
                         </div>
                         <div class="tooltip-code tooltip-code-next" style="color: #22aa22; cursor: pointer;" data-code="${nextCode}" title="Click to copy">${nextCode}</div>
                     </div>
@@ -194,38 +208,30 @@ function addHoverLayer() {
             }, 150); // 150ms delay to give user time to move mouse
         });
         
-        // Function to update tooltip content in real-time
+        // Update only the dynamic text nodes in place (avoids full innerHTML rebuild flicker)
         function updateTooltipContent() {
-            if (tooltip.style.display === 'block') {
-                const parentLi = codeElement.closest('li');
-                const secretElement = parentLi ? parentLi.querySelector('.copy-btn[data]') : null;
-                const secret = secretElement ? secretElement.getAttribute('data') : '';
-                
-                const currentCode = codeNode.innerText;
-                const nextCode = secret ? getNextCode(secret) : '';
-                const currentTimeLeft = getCodeTimeLeft();
-                const nextTimeLeft = getNextCodeTimeLeft();
-                
-                const tooltipHtml = `
-                    <div style="margin-bottom: 8px; font-weight: bold; color: #666;">📋 Click code below to copy:</div>
-                    <div class="tooltip-code-item tooltip-current">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span>Current code:</span>
-                            <span style="color: #0066cc; font-size: 11px;">Expires in ${currentTimeLeft}s</span>
-                        </div>
-                        <div class="tooltip-code tooltip-code-current" style="color: #0066cc; cursor: pointer;" data-code="${currentCode}" title="Click to copy">${currentCode}</div>
-                    </div>
-                    <div class="tooltip-code-item tooltip-next">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span>Next code:</span>
-                            <span style="color: #22aa22; font-size: 11px;">Active in ${nextTimeLeft}s</span>
-                        </div>
-                        <div class="tooltip-code tooltip-code-next" style="color: #22aa22; cursor: pointer;" data-code="${nextCode}" title="Click to copy">${nextCode}</div>
-                    </div>
-                `;
-                
-                tooltip.innerHTML = tooltipHtml;
+            if (tooltip.style.display !== 'block') return;
+            const parentLi = codeElement.closest('li');
+            const secretElement = parentLi ? parentLi.querySelector('.copy-btn[data]') : null;
+            const secret = secretElement ? secretElement.getAttribute('data') : '';
+
+            const currentCode = codeNode.innerText;
+            const nextCode = secret ? getNextCode(secret) : '';
+
+            const curEl = tooltip.querySelector('.tooltip-code-current');
+            const nextEl = tooltip.querySelector('.tooltip-code-next');
+            if (curEl && curEl.textContent !== currentCode) {
+                curEl.textContent = currentCode;
+                curEl.setAttribute('data-code', currentCode);
             }
+            if (nextEl && nextEl.textContent !== nextCode) {
+                nextEl.textContent = nextCode;
+                nextEl.setAttribute('data-code', nextCode);
+            }
+            const curTime = tooltip.querySelector('.tooltip-current-time');
+            const nextTime = tooltip.querySelector('.tooltip-next-time');
+            if (curTime) curTime.textContent = 'Expires in ' + getCodeTimeLeft() + 's';
+            if (nextTime) nextTime.textContent = 'Active in ' + getNextCodeTimeLeft() + 's';
         }
         
         // Position the tooltip relative to the code row (not following the cursor):
@@ -560,10 +566,11 @@ function addDelClick(container){
         if(btns[i].getAttribute('bindclick') === null) {
             btns[i].addEventListener('click', function () {
                 let desc = this.getAttribute('data');
-                if(!confirm('Confirm del?Note:can\'t restore!'))
-                    return;
-                removeNode(this);
-                removeSecret(desc);
+                const btn = this;
+                showCustomConfirm("Confirm del? Note: can't restore!", function() {
+                    removeNode(btn);
+                    removeSecret(desc);
+                });
             });
             btns[i].setAttribute('bindclick', 1); // avoid repeatedly bind.
         }
@@ -861,6 +868,13 @@ function fitAlertFontSize(el, maxSize, minSize, maxHeight) {
         size -= 1;
         el.style.fontSize = size + 'px';
     }
+}
+
+let __confirmCallback = null;
+function showCustomConfirm(message, onConfirm) {
+    __confirmCallback = onConfirm;
+    document.getElementById('confirmContent').textContent = message;
+    document.getElementById('dialogConfirm').style.display = 'block';
 }
 
 function hideCustomAlert() {
@@ -1224,7 +1238,11 @@ function addQRCodeClick(container) {
             // Show QR code on mouse hover
             btn.addEventListener('mouseenter', function() {
                 if (popup && desc && secret) {
-                    generateQRCode(desc, secret, popup);
+                    // Generate once per row; the QR for a fixed secret never changes
+                    if (popup.getAttribute('data-generated') !== '1') {
+                        generateQRCode(desc, secret, popup);
+                        popup.setAttribute('data-generated', '1');
+                    }
                     
                     // Smart positioning: detect if popup should appear above
                     const btnRect = this.getBoundingClientRect();
@@ -1265,9 +1283,14 @@ function addQRCodeClick(container) {
                 });
                 
                 popup.addEventListener('mouseleave', function() {
-                    this.style.display = 'none';
-                    // Clear positioning class
-                    this.classList.remove('qrcode-popup-up');
+                    // Delay hiding so a brief edge-cross doesn't flash-hide the QR popup
+                    setTimeout(() => {
+                        if (!popup.matches(':hover') && !btn.matches(':hover')) {
+                            popup.style.display = 'none';
+                            // Clear positioning class
+                            popup.classList.remove('qrcode-popup-up');
+                        }
+                    }, 100);
                 });
             }
             

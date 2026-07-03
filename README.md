@@ -15,7 +15,7 @@ Two-factor authentication (2FA) codes usually rely on a phone app like Google Au
 
 It also tackles a few real-world pain points:
 
-- **Code about to expire before you can paste it** — hover over a code and the popup shows both the *current* code and the *next* code, each click-to-copy.
+- **Code about to expire before you can paste it** — hover over a code and the popup shows the *current*, *next*, and *next-next* codes, each click-to-copy.
 - **Migrate from phone to desktop** — recognizes standard `otpauth://` QR codes, **and also the batch migration QR codes exported by the Google Authenticator app** (`otpauth-migration://`), importing multiple secrets at once.
 - **Migrate from desktop to phone** — each secret can render its own QR code for a phone app to scan (e.g. when a phone-side VPN also needs the OTP).
 - **Cross-device sync** — secrets live in `chrome.storage.sync`, so they follow your browser account automatically.
@@ -30,7 +30,7 @@ It also tackles a few real-world pain points:
 
 ![Export single QR-Code](otp4.jpg)
 
-![Hover popup showing![Hover popup showing current and next code](otp5.jpg)
+![Hover popup showing current, next, and next-next codes](otp5.jpg)
 
 ---
 
@@ -41,14 +41,15 @@ It also tackles a few real-world pain points:
 | TOTP generation | SHA1 / 6 digits / 30s period — compatible with Google Authenticator and other mainstream apps |
 | Live refresh | Refreshes every second and shows remaining seconds for the current code |
 | One-click copy | Click any code to copy it to the clipboard |
-| Current + next code | Hover popup shows both codes side by side, each click-to-copy, so you're never caught out by an expiring code |
+| Search | Filter rows by title or URL as you type |
+| Current + next + next-next code | Hover popup shows three codes side by side (current / next / next-next), each click-to-copy, so you're never caught out by an expiring code |
 | QR import | Upload a QR image and the `secret` is auto-extracted from `otpauth://` |
 | Google Authenticator batch import | Supports `otpauth-migration://` export QR codes, importing multiple secrets in one go |
 | QR export | Generates a QR code per secret for a phone app to scan back in |
 | Clipboard export / import | All secrets exported as text to the clipboard for backup or cross-device import |
 | Site shortcut | Each secret can carry a URL — one click opens it in a new tab |
 | Bilingual UI | Toggle between Chinese and English; the choice is remembered |
-| Custom dialogs | Custom alert dialogs replace the browser's native `alert` for a consistent feel |
+| Custom dialogs | Custom alert and confirm dialogs replace the browser's native `alert`/`confirm` for a consistent feel |
 | ESC to close | Press Esc to dismiss any open dialog |
 
 ---
@@ -85,7 +86,8 @@ Click the Edge store link above and install directly.
 
 - After adding, each row shows the live code and remaining seconds.
 - **Click a code** → copies it to the clipboard.
-- **Hover over a code** → a popup shows the **current code (blue)** and the **next code (green)**; click either to copy.
+- **Hover over a code** → a popup shows the **current code (blue)**, **next code (green)**, and **next-next code (gray)**; click any to copy.
+- **Search** → type in the search box to filter rows by title or URL.
 
 ### QR import (including Google Authenticator batch export)
 
@@ -165,7 +167,7 @@ Plain HTML / CSS / JavaScript — **no build step, no dependency management**. C
 ### Key implementation notes
 
 - **TOTP generation**: `getCode(secret)` uses `OTPAuth.TOTP` with fixed SHA1/6-digit/30s; refreshed every second by `setInterval(refreshCode, 1000)`.
-- **Next-code preview**: `getNextCode` temporarily overrides `Date.now()` to simulate the next period (popup preview only; doesn't affect the main flow).
+- **Future-code preview**: `getCodeAhead(secret, n)` temporarily overrides `Date.now()` to simulate the period *n* steps ahead (used for the next and next-next codes in the popup; doesn't affect the main flow).
 - **Google Authenticator migration parsing**: `parseSecretFromGoogleAppExport` + `parseMigrationPayload` hand-roll protobuf varint decoding to extract name and secret from the base64 `data` of `otpauth-migration://`, then Base32-encode the raw secret bytes.
 - **Duplicate-binding guard**: attributes like `bindclick` / `hover-bindclick` mark elements to avoid re-binding listeners when rows are added dynamically.
 

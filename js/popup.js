@@ -565,7 +565,7 @@ function addCopyClick(container){
             btns[i].addEventListener('click', function () {
                 let code = this.getAttribute('data');
                 copyStr(code).then(()=>{
-                    showCustomAlert('copyed: ' + code);
+                    showCustomAlert('copyed: ' + code, true);
                 });
             });
             btns[i].setAttribute('bindclick', 1); // avoid repeatedly bind.
@@ -876,14 +876,21 @@ function readCopy() {
 // these 2 var, used to avoid multi setTimeout executed, cause alert-win closed early
 var __customAlertSecond = 3;
 var __customAlertRuning = false;
-function showCustomAlert(message) {
+function showCustomAlert(message, large) {
     __customAlertSecond = 3;
     const alertElement = document.getElementById('customAlert');
     const alertContentElement = document.getElementById('alertContent');
     alertContentElement.textContent = message;
     alertElement.style.display = 'block';
-    // enlarge to ~code size, auto-shrink if text overflows width or grows too tall
-    fitAlertFontSize(alertContentElement, 32, 12, 200);
+    if (large) {
+        // big bold text (e.g. showing a copied code), auto-shrink if it overflows
+        alertContentElement.style.fontWeight = 'bold';
+        fitAlertFontSize(alertContentElement, 32, 12, 200);
+    } else {
+        // normal readable size for status messages
+        alertContentElement.style.fontWeight = 'normal';
+        alertContentElement.style.fontSize = '15px';
+    }
 
     if(__customAlertRuning)
         return;
@@ -1183,7 +1190,7 @@ function base32Encode(data) {
 function copyCodeFromTooltip(code) {
     if (code) {
         copyStr(code).then(() => {
-            showCustomAlert('Copied code: ' + code);
+            showCustomAlert('Copied code: ' + code, true);
         }).catch((error) => {
             console.error('Copy failed:', error);
             showCustomAlert('Copy failed, please try again');

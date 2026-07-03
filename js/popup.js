@@ -180,15 +180,16 @@ function addHoverLayer() {
         });
 
         codeElement.addEventListener('mouseleave', () => {
+            // Always stop this row's refresh timer so it can't keep rewriting the tooltip
+            // after the cursor moves to another row. Hiding is decided separately below.
+            if (codeElement._tooltipUpdateTimer) {
+                clearInterval(codeElement._tooltipUpdateTimer);
+                codeElement._tooltipUpdateTimer = null;
+            }
             // Delay hiding to allow mouse to move to tooltip (or to another code row)
             setTimeout(() => {
                 if (!tooltip.matches(':hover') && !document.querySelector('.code:hover')) {
                     tooltip.style.display = 'none';
-                    // Clear timer
-                    if (codeElement._tooltipUpdateTimer) {
-                        clearInterval(codeElement._tooltipUpdateTimer);
-                        codeElement._tooltipUpdateTimer = null;
-                    }
                 }
             }, 150); // 150ms delay to give user time to move mouse
         });

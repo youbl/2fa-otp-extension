@@ -98,28 +98,8 @@ function startRun() {
 
     // show or hide code's pop-layer
     const tooltip = document.getElementById('tooltip');
-    tooltip.addEventListener('mouseenter', () => {
-        tooltip.style.display = 'block';
-    });
-    tooltip.addEventListener('mouseleave', () => {
-        // Delay hiding so a brief cursor crossing (code <-> tooltip) doesn't flash-hide the tooltip
-        setTimeout(() => {
-            if (!tooltip.matches(':hover') && !document.querySelector('.code:hover')) {
-                tooltip.style.display = 'none';
-                // Clear any existing timers
-                const tooltipUpdateTimers = document.querySelectorAll('.code');
-                tooltipUpdateTimers.forEach(element => {
-                    const timer = element._tooltipUpdateTimer;
-                    if (timer) {
-                        clearInterval(timer);
-                        element._tooltipUpdateTimer = null;
-                    }
-                });
-            }
-        }, 150);
-    });
-    
-    // Add click event listener for tooltip (event delegation)
+
+    // Add click event listener for tooltip (event delegation, click code to copy)
     tooltip.addEventListener('click', function(event) {
         const target = event.target;
         console.log('Tooltip clicked, target:', target, 'classes:', target.classList);
@@ -132,6 +112,22 @@ function startRun() {
             }
         }
     });
+
+    // Click anywhere outside the tooltip closes it.
+    // Arrow clicks stopPropagation, so they are handled by their own open/switch logic
+    // and never reach here.
+    document.addEventListener('click', function(event) {
+        if (tooltip.style.display !== 'block') return;
+        if (tooltip.contains(event.target)) return;
+        tooltip.style.display = 'none';
+        if (tooltip._currentCode && tooltip._currentCode._tooltipUpdateTimer) {
+            clearInterval(tooltip._currentCode._tooltipUpdateTimer);
+            tooltip._currentCode._tooltipUpdateTimer = null;
+        }
+        const curBtn = tooltip._currentCode ? tooltip._currentCode.querySelector('.code-expand-btn') : null;
+        if (curBtn) curBtn.classList.remove('expanded');
+        tooltip._currentCode = null;
+    });
     // wait for node rendered
     setTimeout(addHoverLayer, 500);
 }
@@ -142,77 +138,91 @@ function addHoverLayer() {
     const codeElementArr = document.querySelectorAll('.code');
     //alert(codeElementArr.length)
     codeElementArr.forEach(codeElement => {
-        const codeNode = codeElement;
-        
         // Avoid duplicate event binding
         if (codeElement.getAttribute('hover-bindclick') !== null) {
             return;
         }
 
-        codeElement.addEventListener('mouseenter', (event, obj) => {
-            tooltip.style.display = 'block';
+        const expandBtn = codeElement.querySelector('.code-expand-btn');
+        if (expandBtn) {
+            expandBtn.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
 
-            // Get secret to generate next code
-            const parentLi = codeElement.closest('li');
-            const secretElement = parentLi ? parentLi.querySelector('.copy-btn[data]') : null;
-            const secret = secretElement ? secretElement.getAttribute('data') : '';
-            
-            // Generate dual code tooltip content
-            const currentCode = codeNode.innerText;
-            const nextCode = secret ? getNextCode(secret) : '';
-            const nextNextCode = secret ? getCodeAhead(secret, 2) : '';
-            const currentTimeLeft = getCodeTimeLeft();
-            const nextTimeLeft = getNextCodeTimeLeft();
-            const nextNextTimeLeft = getNextNextCodeTimeLeft();
-            
-            const tooltipHtml = `
-                <div style="margin-bottom: 6px; font-weight: bold; color: #666;">📋 Click code to copy:</div>
-                <div class="tooltip-code-item tooltip-current">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span class="tooltip-current-time" style="color: #0066cc; font-size: 12px;">Expires in ${currentTimeLeft}s</span>
-                        <div class="tooltip-code tooltip-code-current" style="color: #0066cc; cursor: pointer;" data-code="${currentCode}" title="Click to copy">${currentCode}</div>
-                    </div>
-                </div>
-                <div class="tooltip-code-item tooltip-next">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span class="tooltip-next-time" style="color: #22aa22; font-size: 12px;">Active in ${nextTimeLeft}s</span>
-                        <div class="tooltip-code tooltip-code-next" style="color: #22aa22; cursor: pointer;" data-code="${nextCode}" title="Click to copy">${nextCode}</div>
-                    </div>
-                </div>
-                <div class="tooltip-code-item tooltip-nextnext">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span class="tooltip-nextnext-time" style="color: #999; font-size: 12px;">Active in ${nextNextTimeLeft}s</span>
-                        <div class="tooltip-code tooltip-code-nextnext" style="color: #999; cursor: pointer;" data-code="${nextNextCode}" title="Click to copy">${nextNextCode}</div>
-                    </div>
-                </div>
-            `;
-            
-            tooltip.innerHTML = tooltipHtml;
-            
-            // Start real-time update timer
-            if (codeElement._tooltipUpdateTimer) {
-                clearInterval(codeElement._tooltipUpdateTimer);
-            }
-            codeElement._tooltipUpdateTimer = setInterval(updateTooltipContent, 1000);
-            
-            // Position relative to the code row (does not follow the cursor)
-            updateTooltipPosition();
-        });
-
-        codeElement.addEventListener('mouseleave', () => {
-            // Always stop this row's refresh timer so it can't keep rewriting the tooltip
-            // after the cursor moves to another row. Hiding is decided separately below.
-            if (codeElement._tooltipUpdateTimer) {
-                clearInterval(codeElement._tooltipUpdateTimer);
-                codeElement._tooltipUpdateTimer = null;
-            }
-            // Delay hiding to allow mouse to move to tooltip (or to another code row)
-            setTimeout(() => {
-                if (!tooltip.matches(':hover') && !document.querySelector('.code:hover')) {
+                // Click the same arrow again -> collapse
+                if (tooltip.style.display === 'block' && tooltip._currentCode === codeElement) {
                     tooltip.style.display = 'none';
+                    if (codeElement._tooltipUpdateTimer) {
+                        clearInterval(codeElement._tooltipUpdateTimer);
+                        codeElement._tooltipUpdateTimer = null;
+                    }
+                    tooltip._currentCode = null;
+                    expandBtn.classList.remove('expanded');
+                    return;
                 }
-            }, 150); // 150ms delay to give user time to move mouse
-        });
+
+                // Switching from another row: stop its timer and reset its arrow
+                if (tooltip._currentCode && tooltip._currentCode !== codeElement) {
+                    if (tooltip._currentCode._tooltipUpdateTimer) {
+                        clearInterval(tooltip._currentCode._tooltipUpdateTimer);
+                        tooltip._currentCode._tooltipUpdateTimer = null;
+                    }
+                    const prevBtn = tooltip._currentCode.querySelector('.code-expand-btn');
+                    if (prevBtn) prevBtn.classList.remove('expanded');
+                }
+
+                tooltip.style.display = 'block';
+
+                // Get secret to generate next code
+                const parentLi = codeElement.closest('li');
+                const secretElement = parentLi ? parentLi.querySelector('.copy-btn[data]') : null;
+                const secret = secretElement ? secretElement.getAttribute('data') : '';
+
+                // Generate dual code tooltip content
+                const currentCode = codeElement.querySelector('.copy-btn').getAttribute('data');
+                const nextCode = secret ? getNextCode(secret) : '';
+                const nextNextCode = secret ? getCodeAhead(secret, 2) : '';
+                const currentTimeLeft = getCodeTimeLeft();
+                const nextTimeLeft = getNextCodeTimeLeft();
+                const nextNextTimeLeft = getNextNextCodeTimeLeft();
+
+                const tooltipHtml = `
+                    <div style="margin-bottom: 6px; font-weight: bold; color: #666;">📋 Click code to copy:</div>
+                    <div class="tooltip-code-item tooltip-current">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="tooltip-current-time" style="color: #0066cc; font-size: 12px;">Expires in ${currentTimeLeft}s</span>
+                            <div class="tooltip-code tooltip-code-current" style="color: #0066cc; cursor: pointer;" data-code="${currentCode}" title="Click to copy">${currentCode}</div>
+                        </div>
+                    </div>
+                    <div class="tooltip-code-item tooltip-next">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="tooltip-next-time" style="color: #22aa22; font-size: 12px;">Active in ${nextTimeLeft}s</span>
+                            <div class="tooltip-code tooltip-code-next" style="color: #22aa22; cursor: pointer;" data-code="${nextCode}" title="Click to copy">${nextCode}</div>
+                        </div>
+                    </div>
+                    <div class="tooltip-code-item tooltip-nextnext">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="tooltip-nextnext-time" style="color: #999; font-size: 12px;">Active in ${nextNextTimeLeft}s</span>
+                            <div class="tooltip-code tooltip-code-nextnext" style="color: #999; cursor: pointer;" data-code="${nextNextCode}" title="Click to copy">${nextNextCode}</div>
+                        </div>
+                    </div>
+                `;
+
+                tooltip.innerHTML = tooltipHtml;
+
+                // Start real-time update timer
+                if (codeElement._tooltipUpdateTimer) {
+                    clearInterval(codeElement._tooltipUpdateTimer);
+                }
+                codeElement._tooltipUpdateTimer = setInterval(updateTooltipContent, 1000);
+
+                // Position relative to the code row (does not follow the cursor)
+                updateTooltipPosition();
+
+                tooltip._currentCode = codeElement;
+                expandBtn.classList.add('expanded');
+            });
+        }
         
         // Update only the dynamic text nodes in place (avoids full innerHTML rebuild flicker)
         function updateTooltipContent() {
@@ -221,7 +231,7 @@ function addHoverLayer() {
             const secretElement = parentLi ? parentLi.querySelector('.copy-btn[data]') : null;
             const secret = secretElement ? secretElement.getAttribute('data') : '';
 
-            const currentCode = codeNode.innerText;
+            const currentCode = codeElement.querySelector('.copy-btn').getAttribute('data');
             const nextCode = secret ? getNextCode(secret) : '';
             const nextNextCode = secret ? getCodeAhead(secret, 2) : '';
 

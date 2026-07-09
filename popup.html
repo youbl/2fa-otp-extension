@@ -272,6 +272,26 @@
             letter-spacing: 1px;
         }
 
+        .code-expand-btn {
+            text-decoration: none;
+            color: #0066cc;
+            font-size: 14px;
+            font-weight: normal;
+            padding: 0 2px;
+            cursor: pointer;
+            user-select: none;
+            display: inline-block;
+            transition: transform 0.15s ease;
+        }
+
+        .code-expand-btn:hover {
+            color: #004080;
+        }
+
+        .code-expand-btn.expanded {
+            transform: rotate(90deg);
+        }
+
         .del-btn {
             display: inline-block;
             text-decoration: none;
@@ -398,7 +418,7 @@
             <div style="display: flex; align-items: center; width: 100%;">
                 <div style="flex: 0 0 auto; padding: 0 4px 0 5px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;"><a href="#0" class="del-btn" data="{{desc}}">×</a><div class="endTime">{{endTime}}s</div></div>
                 <div style="flex: 0 0 auto; padding-left: 5px; display:none;"><a href="#0" class="copy-btn" data="{{secret}}">Key</a></div>
-                <div style="flex: 0 0 150px; font-weight: bold; font-size: 32px; line-height: 1;" class="code"><a href="#0" class="copy-btn" data="{{code}}" style="display:block; width:100%; padding:4px 0; box-sizing:border-box;">{{code}}</a></div>
+                <div style="flex: 0 0 150px; font-weight: bold; font-size: 32px; line-height: 1; display:flex; align-items:center;" class="code"><a href="#0" class="copy-btn" data="{{code}}" style="display:block; padding:4px 0; box-sizing:border-box;">{{code}}</a><a href="#0" class="code-expand-btn" title="Show next codes">▶</a></div>
                 <div style="flex: 1; font-weight: bold; padding-left:5px;" class="desc">{{desc}}</div>
                 <div style="flex: 0 0 auto; padding-right: 5px; display: none;" class="url-btn-container">
                     <button class="url-btn" data-url="{{url}}" title="{{url}}">URL</button>

@@ -84,7 +84,7 @@ function startRun() {
     document.addEventListener('keydown', function(event) {
         if (isAddKeyOpen()) return;
         if (event.ctrlKey || event.metaKey || event.altKey) return;
-        if (event.key.length !== 1) return;
+        if (event.key.length !== 1 && event.key !== 'Backspace') return;
         const active = document.activeElement;
         if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
         const searchInput = document.getElementById('searchInput');

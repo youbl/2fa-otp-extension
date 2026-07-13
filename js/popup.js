@@ -78,6 +78,23 @@ function startRun() {
     // search box: filter rows by title or url on keyup
     document.getElementById('searchInput').addEventListener('keyup', filterCodes);
 
+    // redirect printable keystrokes to the search box when no input is focused,
+    // so typing anywhere instantly filters the list. Skipped while the Add Key
+    // dialog is open (its own inputs must receive the keystrokes).
+    document.addEventListener('keydown', function(event) {
+        if (isAddKeyOpen()) return;
+        if (event.ctrlKey || event.metaKey || event.altKey) return;
+        if (event.key.length !== 1) return;
+        const active = document.activeElement;
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
+        const searchInput = document.getElementById('searchInput');
+        searchInput.focus();
+        // let the browser insert the character into the newly focused input
+    });
+
+    // focus the search box on popup open for immediate filtering
+    document.getElementById('searchInput').focus();
+
     // custom confirm dialog: Yes runs the callback, No just closes
     document.getElementById('btnConfirmYes').addEventListener('click', function() {
         document.getElementById('dialogConfirm').style.display = 'none';
@@ -537,6 +554,11 @@ function refreshCode(){
     }finally{
         __codeRefreshing = false;
     }
+}
+
+// whether the Add Key dialog is currently shown (editing mode)
+function isAddKeyOpen() {
+    return document.getElementById('dialogAdd').style.display === 'block';
 }
 
 // filter list rows by title or url (case-insensitive substring), triggered by search box

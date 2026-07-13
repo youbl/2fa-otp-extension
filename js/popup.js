@@ -561,8 +561,31 @@ function isAddKeyOpen() {
     return document.getElementById('dialogAdd').style.display === 'block';
 }
 
+// hide all floating panels: the Next Code tooltip and any open QR code popups
+function hideFloatingPanels() {
+    const tooltip = document.getElementById('tooltip');
+    if (tooltip && tooltip.style.display === 'block') {
+        tooltip.style.display = 'none';
+        if (tooltip._currentCode && tooltip._currentCode._tooltipUpdateTimer) {
+            clearInterval(tooltip._currentCode._tooltipUpdateTimer);
+            tooltip._currentCode._tooltipUpdateTimer = null;
+        }
+        const curBtn = tooltip._currentCode ? tooltip._currentCode.querySelector('.code-expand-btn') : null;
+        if (curBtn) curBtn.classList.remove('expanded');
+        tooltip._currentCode = null;
+    }
+    const qrPopups = document.getElementsByClassName('qrcode-popup');
+    for (let i = 0, j = qrPopups.length; i < j; i++) {
+        if (qrPopups[i].style.display === 'block') {
+            qrPopups[i].style.display = 'none';
+            qrPopups[i].classList.remove('qrcode-popup-up');
+        }
+    }
+}
+
 // filter list rows by title or url (case-insensitive substring), triggered by search box
 function filterCodes() {
+    hideFloatingPanels();
     const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
     const root = document.getElementById('divCode');
     const ulList = root.getElementsByTagName('UL');
